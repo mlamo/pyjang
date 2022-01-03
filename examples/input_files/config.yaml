@@ -1,0 +1,12 @@
+analysis:
+  nside: -1  # -1 means that input skymaps will be used as is
+  apply_det_systematics: 0
+  ntoys_det_systematics: 0
+  fraction_of_gwregion: 0.9
+  prior_signal: flat  # choices are 'flat' or 'jeffrey'
+
+range:
+  log10_flux: [-5, 5, 1000]
+  log10_etot: [48, 62, 1400]
+  log10_fnu: [-5, 10, 1500]
+  neutrino_energy_GeV: [5, 1e8]

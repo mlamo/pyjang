@@ -1,0 +1,14 @@
+astropy
+cached_property
+datetime
+h5py
+healpy
+ligo.skymap
+matplotlib
+numpy
+pandas
+python-ligo-lw
+pyyaml
+scipy
+setuptools_scm
+typing
