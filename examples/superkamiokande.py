@@ -111,6 +111,7 @@ if __name__ == "__main__":
 
     parameters = Parameters("examples/input_files/config.yaml")
     parameters.set_models("x**-2", jang.conversions.JetIsotropic())
+    parameters.nside = 8
 
     gwdb = "examples/input_files/gw_catalogs/database_example.csv"
     detresults = {

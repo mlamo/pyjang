@@ -23,7 +23,7 @@ class Parameters:
                 self.nside = None
             self.apply_det_systematics = params["analysis"]["apply_det_systematics"]
             self.ntoys_det_systematics = params["analysis"]["ntoys_det_systematics"]
-            self.fraction_of_gwregion = params["analysis"]["fraction_of_gwregion"]
+            self.search_region = params["analysis"]["search_region"]
             self.range_flux = np.array(params["range"]["log10_flux"], dtype=int)
             self.range_etot = np.array(params["range"]["log10_etot"], dtype=int)
             self.range_fnu = np.array(params["range"]["log10_fnu"], dtype=int)
@@ -48,3 +48,18 @@ class Parameters:
         if self.jet is not None:
             str_model += "_" + self.jet.str_filename
         return str_model
+
+    def get_searchregion_gwfraction(self) -> float:
+        spl = self.search_region.split("_")
+        if len(spl) >= 2 and spl[0] == "region":
+            return float(spl[1]) / 100
+        if len(spl) == 1 and spl[0] == "bestfit":
+            return 0
+        return np.nan
+
+    def get_searchregion_iszeroincluded(self) -> bool:
+        """Returns True if the pixels with zero acceptance should be included."""
+        spl = self.search_region.split("_")
+        if spl[-1] == "excludezero":
+            return False
+        return True

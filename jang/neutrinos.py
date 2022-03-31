@@ -126,7 +126,7 @@ class Background(abc.ABC):
         pass
 
 
-class BackgroundFixed:
+class BackgroundFixed(Background):
     def __init__(self, b0: float):
         self.b0 = b0
 
@@ -141,12 +141,14 @@ class BackgroundFixed:
         return f"{self.b0:.2e}"
 
 
-class BackgroundGaussian:
+class BackgroundGaussian(Background):
     def __init__(self, b0: float, error_b: float):
         self.b0, self.error_b = b0, error_b
 
     def prepare_toys(self, ntoys: int):
-        return truncnorm.rvs(0, np.inf, loc=self.b0, scale=self.error_b, size=ntoys)
+        return truncnorm.rvs(
+            -self.b0 / self.error_b, np.inf, loc=self.b0, scale=self.error_b, size=ntoys
+        )
 
     @property
     def nominal(self):
@@ -156,7 +158,7 @@ class BackgroundGaussian:
         return f"{self.b0:.2e} +/- {self.error_b:.2e}"
 
 
-class BackgroundPoisson:
+class BackgroundPoisson(Background):
     def __init__(self, Noff: int, nregions: int):
         self.Noff, self.nregions = Noff, nregions
 
@@ -220,15 +222,87 @@ class ToyResult:
         )
 
 
-class Detector:
+class DetectorBase(abc.ABC):
+
+    """Class to handle the neutrino detector information."""
+
+    def __init__(self):
+        self.name = None
+        self._samples = []
+        self.error_acceptance = None
+
+    @property
+    def samples(self):
+        return self._samples
+
+    @property
+    def nsamples(self):
+        return len(self._samples)
+
+    def get_acceptances(self, spectrum: str):
+        accs = []
+        for sample in self.samples:
+            if spectrum not in sample.acceptances:
+                raise RuntimeError(
+                    "Acceptance for spectrum %s is not available in sample %s"
+                    % (spectrum, sample.name)
+                )
+            accs.append(sample.acceptances[spectrum])
+        nsides = np.array([acc.nside for acc in accs])
+        if not np.all(nsides == nsides[0]):
+            raise RuntimeError(
+                "All acceptance maps are not in the same resolution. Exiting!"
+            )
+        return accs, nsides[0]
+
+    def get_nonempty_acceptance_pixels(self, spectrum: str, nside: int):
+        accs, _ = self.get_acceptances(spectrum)
+        npix = hp.nside2npix(nside)
+        acctot = np.ones(npix)
+        for acc in accs:
+            for ipix in range(npix):
+                acctot[ipix] += acc.evaluate(ipix, nside)
+        return np.nonzero(acctot)
+
+    def prepare_toys(self, ntoys: int = 0) -> List[ToyResult]:
+
+        toys = []
+        nobserved = np.array([s.nobserved for s in self.samples])
+        background = np.array([s.background for s in self.samples])
+        if np.any(nobserved == None):
+            raise RuntimeError(
+                "[Detector] The number of observed events is not correctly filled."
+            )
+        if ntoys == 0:
+            return [
+                ToyResult(
+                    nobserved,
+                    [bkg.nominal for bkg in background],
+                    np.ones(self.nsamples),
+                )
+            ]
+        toys_acceptance = multivariate_normal.rvs(
+            mean=np.ones(self.nsamples), cov=self.error_acceptance, size=ntoys
+        )
+
+        for i in range(ntoys):
+            while np.any(toys_acceptance[i] < 0):
+                toys_acceptance[i] = multivariate_normal.rvs(
+                    mean=np.ones(self.nsamples), cov=self.error_acceptance
+                )
+        toys_background = np.array([bkg.prepare_toys(ntoys) for bkg in background]).T
+
+        for i in range(ntoys):
+            toys.append(ToyResult(nobserved, toys_background[i], toys_acceptance[i]))
+        return toys
+
+
+class Detector(DetectorBase):
     """Class to handle the neutrino detector information."""
 
     def __init__(self, infile: Optional[Union[dict, str]] = None):
-        self.name = None
-        self.nsamples = None
-        self.samples = []
+        super().__init__()
         self.earth_location = None
-        self.error_acceptance = None
         self.error_acceptance_corr = None
         if infile is not None:
             self.load(infile)
@@ -259,8 +333,7 @@ class Detector:
                 lat=data["earth_location"]["latitude"] * unit,
                 lon=data["earth_location"]["longitude"] * unit,
             )
-        self.nsamples = data["nsamples"]
-        for i in range(self.nsamples):
+        for i in range(data["nsamples"]):
             smp = Sample(
                 name=data["samples"]["names"][i],
                 shortname=data["samples"]["shortnames"][i]
@@ -270,13 +343,13 @@ class Detector:
             data["samples"]["energyrange"] = np.array(
                 data["samples"]["energyrange"], dtype=float
             )
-            if data["samples"]["energyrange"].shape == (self.nsamples, 2):
+            if data["samples"]["energyrange"].shape == (data["nsamples"], 2):
                 smp.set_energy_range(*data["samples"]["energyrange"][i])
             elif data["samples"]["energyrange"].shape == (2,):
                 smp.set_energy_range(*data["samples"]["energyrange"])
             else:
                 raise RuntimeError("[Detector] Unknown format for energy range.")
-            self.samples.append(smp)
+            self._samples.append(smp)
         self.error_acceptance = data["errors"]["acceptance"]
         self.error_acceptance_corr = data["errors"]["acceptance_corr"]
         self.check_errors_validity()
@@ -305,24 +378,6 @@ class Detector:
             if nside is not None:
                 acc.change_resolution(nside)
             sample.add_acceptance(spectrum, acc)
-
-    # getter functions
-
-    def get_acceptances(self, spectrum: str):
-        accs = []
-        for sample in self.samples:
-            if spectrum not in sample.acceptances:
-                raise RuntimeError(
-                    "Acceptance for spectrum %s is not available in sample %s"
-                    % (spectrum, sample.name)
-                )
-            accs.append(sample.acceptances[spectrum])
-        nsides = np.array([acc.nside for acc in accs])
-        if not np.all(nsides == nsides[0]):
-            raise RuntimeError(
-                "All acceptance maps are not in the same resolution. Exiting!"
-            )
-        return accs, nsides[0]
 
     # converters
 
@@ -360,45 +415,22 @@ class Detector:
             self.error_acceptance, self.nsamples, correlation=self.error_acceptance_corr
         )
 
-    def prepare_toys(self, ntoys: int = 0) -> List[ToyResult]:
 
-        toys = []
-        nobserved = np.array([s.nobserved for s in self.samples])
-        background = np.array([s.background for s in self.samples])
-        if np.any(nobserved == None):
-            raise RuntimeError(
-                "[Detector] The number of observed events is not correctly filled."
-            )
-        if ntoys == 0:
-            return [
-                ToyResult(
-                    nobserved,
-                    [bkg.nominal for bkg in background],
-                    np.ones(self.nsamples),
-                )
-            ]
-        toys_acceptance = multivariate_normal.rvs(
-            mean=np.ones(self.nsamples), cov=self.error_acceptance, size=ntoys
-        )
-
-        for i in range(ntoys):
-            while np.any(toys_acceptance[i] < 0):
-                toys_acceptance[i] = multivariate_normal.rvs(
-                    mean=np.ones(self.nsamples), cov=self.error_acceptance
-                )
-        toys_background = np.array([bkg.prepare_toys(ntoys) for bkg in background]).T
-
-        for i in range(ntoys):
-            toys.append(ToyResult(nobserved, toys_background[i], toys_acceptance[i]))
-        return toys
-
-
-class SuperDetector:
+class SuperDetector(DetectorBase):
     """Class to handle several detectors simultaneously."""
 
     def __init__(self, name: Optional[str] = None):
+        super().__init__()
         self.name = name
         self.detectors = []
+
+    @property
+    def samples(self):
+        return itertools.chain.from_iterable([det.samples for det in self.detectors])
+
+    @property
+    def nsamples(self):
+        return sum([det.nsamples for det in self.detectors])
 
     def add_detector(self, det: Detector):
         log = logging.getLogger("jang")
@@ -410,65 +442,9 @@ class SuperDetector:
             return
         log.info("[SuperDetector] Detector %s is added to the SuperDetector.", det.name)
         self.detectors.append(det)
-
-    @property
-    def samples(self):
-        return itertools.chain.from_iterable([det.samples for det in self.detectors])
-
-    @property
-    def nsamples(self):
-        return sum([det.nsamples for det in self.detectors])
-
-    @property
-    def error_acceptance(self):
-        return block_diag(*[det.error_acceptance for det in self.detectors])
-
-    @property
-    def error_background(self):
-        return block_diag(*[det.error_background for det in self.detectors])
-
-    def get_acceptances(self, spectrum: str):
-        accs = []
-        for sample in self.samples:
-            if spectrum not in sample.acceptances:
-                raise RuntimeError(
-                    "Acceptance for spectrum %s is not available in sample %s"
-                    % (spectrum, sample.name)
-                )
-            accs.append(sample.acceptances[spectrum])
-        return accs
-
-    def prepare_toys(self, ntoys: int = 0):
-
-        toys = []
-        nobserved = np.array([s.nobserved for s in self.samples])
-        background = np.array([s.background for s in self.samples])
-        if np.any(nobserved == None):
-            raise RuntimeError(
-                "[Detector] The number of observed events is not correctly filled."
-            )
-        if ntoys == 0:
-            return [
-                ToyResult(
-                    nobserved,
-                    [bkg.nominal for bkg in background],
-                    np.ones(self.nsamples),
-                )
-            ]
-        toys_acceptance = multivariate_normal.rvs(
-            mean=np.ones(self.nsamples), cov=self.error_acceptance, size=ntoys
+        self.error_acceptance = block_diag(
+            *[d.error_acceptance for d in self.detectors]
         )
-
-        for i in range(ntoys):
-            while np.any(toys_acceptance[i] < 0):
-                toys_acceptance[i] = multivariate_normal.rvs(
-                    mean=np.ones(self.nsamples), cov=self.error_acceptance
-                )
-        toys_background = np.array([bkg.prepare_toys(ntoys) for bkg in background]).T
-
-        for i in range(ntoys):
-            toys.append(ToyResult(nobserved, toys_background[i], toys_acceptance[i]))
-        return toys
 
 
 class EffectiveAreaBase:
@@ -486,8 +462,8 @@ class EffectiveAreaBase:
         pass
 
     def to_acceptance(self, detector: Detector, nside: int, jd: float, spectrum: str):
-        if nside <= 0:
-            raise RuntimeError("nside should be positive!")
+        if nside is None or nside <= 0:
+            raise RuntimeError("A positive nside should be provided!")
         npix = hp.nside2npix(nside)
         acc_map = np.zeros(npix)
         dec, ra = hp.pix2ang(nside, range(npix))

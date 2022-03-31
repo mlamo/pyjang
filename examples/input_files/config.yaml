@@ -2,7 +2,7 @@ analysis:
   nside: -1  # -1 means that input skymaps will be used as is
   apply_det_systematics: 0
   ntoys_det_systematics: 0
-  fraction_of_gwregion: 0.9
+  search_region: region_90
   prior_signal: flat  # choices are 'flat' or 'jeffrey'
 
 range:

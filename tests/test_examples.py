@@ -21,7 +21,7 @@ class TestExamples(unittest.TestCase):
               nside: 8
               apply_det_systematics: 0
               ntoys_det_systematics: 0
-              fraction_of_gwregion: 0.9
+              search_region: region_90
               prior_signal: flat
 
             range:
