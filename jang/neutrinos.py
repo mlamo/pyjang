@@ -258,7 +258,7 @@ class DetectorBase(abc.ABC):
     def get_nonempty_acceptance_pixels(self, spectrum: str, nside: int):
         accs, _ = self.get_acceptances(spectrum)
         npix = hp.nside2npix(nside)
-        acctot = np.ones(npix)
+        acctot = np.zeros(npix)
         for acc in accs:
             for ipix in range(npix):
                 acctot[ipix] += acc.evaluate(ipix, nside)
