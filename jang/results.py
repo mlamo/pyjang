@@ -1,6 +1,8 @@
 """Formatting the results in a Pandas database and related plotting functions."""
 
+import copy
 import logging
+from math import floor, ceil
 import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
@@ -42,6 +44,7 @@ class Database:
         file_lkl_flux: str,
         file_lkl_etot: str,
         file_lkl_fnu: str,
+        custom: Optional[dict] = None,
     ):
         """Adds new entry to the database."""
         sample_names = []
@@ -65,6 +68,7 @@ class Database:
             else "",
             "Detector.results.nobserved": [s.nobserved for s in detector.samples],
             "Detector.results.nbackground": [s.background for s in detector.samples],
+            "GW.catalog": gw.catalog,
             "GW.name": gw.name,
             "GW.mass1": gw.samples.masses[0],
             "GW.mass2": gw.samples.masses[1],
@@ -87,6 +91,8 @@ class Database:
             "Results.likelihoods_etot": file_lkl_etot,
             "Results.likelihoods_fnu": file_lkl_fnu,
         }
+        if custom is not None:
+            entry.update({f"Custom.{k}": v for k, v in custom.items()})
         newline = pd.DataFrame([entry])
         if self.db is None:
             self.db = newline
@@ -102,7 +108,7 @@ class Database:
             outfile = self._filepath
         else:
             raise RuntimeError("No output file was provided.")
-        self.db = self.db[sorted(self.db.columns)]
+        self.sort()
         self.db.to_csv(outfile)
 
     def select_detector(self, det: Union[Detector, SuperDetector, str]):
@@ -125,24 +131,44 @@ class Database:
                 db=self.db[self.db["Parameters.jet_model"] == jetmodel.__repr__()]
             )
 
+    def select_gwtype(self, gwtype: str):
+        return Database(db=self.db[self.db["GW.type"] == gwtype])
+
     def select(
         self,
         det: Optional[Union[Detector, SuperDetector, str]] = None,
         spectrum: Optional[str] = None,
         jetmodel: Optional[Union[JetModelBase, str]] = None,
+        gwtype: Optional[str] = None,
     ):
-        if det is None and spectrum is None and jetmodel is None:
+        if det is None and spectrum is None and jetmodel is None and gwtype is None:
             logging.getLogger("jang").info(
                 "No selection is applied, return the infiltered database."
             )
-        db = self
+        db = copy.copy(self)
         if det is not None:
             db = db.select_detector(det)
         if spectrum is not None:
             db = db.select_spectrum(spectrum)
         if jetmodel is not None:
             db = db.select_jetmodel(jetmodel)
+        if gwtype is not None:
+            db = db.select_gwtype(gwtype)
         return db
+
+    def sort(self):
+        self.db = self.db[sorted(self.db.columns)]
+        self.db.sort_values(
+            by=[
+                "GW.catalog",
+                "GW.name",
+                "Parameters.neutrino_spectrum",
+                "Parameters.jet_model",
+            ],
+            ascending=[True, True, True, True],
+            na_position="first",
+            inplace=True,
+        )
 
     def plot_energy_vs_distance(self, outfile: str, cat: Optional[dict] = None):
         """Draw the distribution of the obtained limits, for a given selection of entries, as a function of luminosity distance."""
@@ -172,10 +198,96 @@ class Database:
                     marker=mar,
                     label=lab,
                 )
-            plt.legend(loc="upper left")
-        plt.xlabel("distance [Mpc]")
-        plt.ylabel(r"$E^{90\%}_{tot,\nu}$ [erg]")
+            plt.legend(loc="upper left", fontsize=17)
+        plt.xlabel("distance [Mpc]", fontsize=16)
+        plt.ylabel(r"$E^{90\%}_{tot,\nu}$ [erg]", fontsize=16)
         plt.xscale("log")
         plt.yscale("log")
+        plt.tight_layout()
+        plt.savefig(outfile, dpi=300)
+
+    def plot_fnu_vs_distance(self, outfile: str, cat: Optional[dict] = None):
+        """Draw the distribution of the obtained limits, for a given selection of entries, as a function of luminosity distance."""
+
+        plt.close("all")
+        if cat is None:
+            plt.errorbar(
+                x=self.db["GW.distance_mean"],
+                y=self.db["Results.limit_fnu"],
+                xerr=self.db["GW.distance_error"],
+                linewidth=0,
+                elinewidth=1,
+                marker="x",
+            )
+        else:
+            for c, col, mar, lab in zip(
+                cat["categories"], cat["colors"], cat["markers"], cat["labels"]
+            ):
+                db_cat = self.db[self.db[cat["column"]] == c]
+                plt.errorbar(
+                    x=db_cat["GW.distance_mean"],
+                    y=db_cat["Results.limit_fnu"],
+                    xerr=db_cat["GW.distance_error"],
+                    linewidth=0,
+                    elinewidth=1,
+                    color=col,
+                    marker=mar,
+                    label=lab,
+                )
+            plt.legend(loc="upper left", fontsize=17)
+        plt.xlabel("distance [Mpc]", fontsize=16)
+        plt.ylabel(r"$E^{90\%}_{tot,\nu}/E_{radiated}$", fontsize=16)
+        plt.xscale("log")
+        plt.yscale("log")
+        plt.tight_layout()
+        plt.savefig(outfile, dpi=300)
+
+    def plot_flux(self, outfile: str, cat: Optional[dict] = None):
+
+        plt.close("all")
+        plt.figure(figsize=(15, 5))
+        min_flux, max_flux = np.inf, 0
+        if cat is None:
+            ii = range(len(self.db.index))
+            plt.plot(
+                ii,
+                self.db["Results.limit_flux"],
+                color="tab:blue",
+                linewidth=0,
+                marker="x",
+                markersize=10,
+            )
+            min_flux = np.nanmin(self.db["Results.limit_flux"])
+            max_flux = np.nanmax(self.db["Results.limit_flux"])
+            plt.xticks(ii, self.db["GW.name"], rotation=65, ha="right", fontsize=15)
+        else:
+            names = []
+            for c, col, mar, lab in zip(
+                cat["categories"], cat["colors"], cat["markers"], cat["labels"]
+            ):
+                db_cat = self.db[self.db[cat["column"]] == c]
+                ii = np.arange(len(names), len(names) + len(db_cat.index))
+                names += list(db_cat["GW.name"])
+                plt.plot(
+                    ii,
+                    db_cat["Results.limit_flux"],
+                    color=col,
+                    linewidth=0,
+                    marker=mar,
+                    markersize=9,
+                    label=lab,
+                )
+                min_flux = min(min_flux, np.nanmin(self.db["Results.limit_flux"]))
+                max_flux = max(max_flux, np.nanmax(self.db["Results.limit_flux"]))
+            plt.legend(loc="upper center", ncol=3)
+            plt.xticks(
+                np.arange(len(names)), names, rotation=65, ha="right", fontsize=15
+            )
+        plt.yscale("log")
+        plt.ylabel(r"$E^2\dfrac{dn}{dE}$ [GeV cm$^{-2}$]", fontsize=16)
+        plt.ylim((10 ** floor(np.log10(min_flux)), 10 ** ceil(np.log10(max_flux))))
+        plt.grid(axis="y", which="major")
+        plt.grid(axis="y", which="minor", linewidth=0.6)
+        plt.grid(axis="x", which="major", linestyle="--")
         plt.tight_layout()
         plt.savefig(outfile, dpi=300)
