@@ -12,6 +12,8 @@ import pandas as pd
 from typing import Optional, Tuple
 
 import jang.conversions
+import jang.neutrinos
+import jang.parameters
 
 priorities = [
     "C01:IMRPhenomXPHM",
@@ -19,8 +21,14 @@ priorities = [
     "C01:IMRPhenomPv3HM",
     "IMRPhenomPv3HM",
     "C01:IMRPhenomPv2",
+    "IMRPhenomPv2",
+    "C01:IMRPhenomNSBH:HighSpin",
+    "IMRPhenomNSBH:HighSpin",
+    "C01:IMRPhenomNSBH:LowSpin",
+    "IMRPhenomNSBH:LowSpin",
     "C01:Mixed",
-    "PublicationSamples",
+    "Mixed",
+    "PublicationSamples"
 ]
 
 
@@ -36,6 +44,7 @@ class GW:
         self.fits = None
         self.samples = None
         self.logger = logger
+        self.catalog = ''
         if path_to_fits is not None:
             self.set_fits(path_to_fits)
         if path_to_samples is not None:
@@ -74,11 +83,14 @@ class GWFits:
             skymap *= 1 / np.sum(skymap)
         return skymap
 
-    def get_signal_region(self, nside: int, contained_prob: float = 0.90) -> np.ndarray:
+    def get_signal_region(self, nside: int = None, contained_prob: float = 0.90) -> np.ndarray:
         """Get the region containing a given probability of the skymap, for a given resolution."""
         skymap = self.get_skymap(nside)
         npix = hp.get_map_size(skymap)
-        nside = hp.get_nside(skymap)
+        nside = hp.npix2nside(npix)
+
+        if contained_prob is None:
+            return np.arange(npix)
 
         iSort = np.flipud(np.argsort(skymap))
         sortedCumulProba = np.cumsum(skymap[iSort])
@@ -99,14 +111,8 @@ class GWSamples:
         self.mass2 = None
 
     def find_correct_sample(self) -> str:
-        """Find the correct posterior samples, first available one from the following list:
-        - C01:IMRPhenomXPHM
-        - IMRPhenomXPHM
-        - C01:IMRPhenomPv3HM
-        - IMRPhenomPv3HM
-        - C01:IMRPhenomPv2
-        - C01:Mixed
-        - PublicationSamples
+        """Find the correct posterior samples, first available one
+        from the list in the global variable 'priorities' in gw.py.
         """
         f = h5py.File(self.file, "r")
         keys = list(f.keys())
@@ -193,16 +199,21 @@ class Database:
     """Database containing all GW events."""
 
     def __init__(
-        self, filepath: Optional[str] = None, db: Optional[pd.DataFrame] = None
+        self, filepath: Optional[str] = None, db: Optional[pd.DataFrame] = None, name: Optional[str] = None
     ):
         self._filepath = filepath
         self.db = db
+        self.name = name
         if filepath is not None and db is not None:
             logging.getLogger("jang").warning(
                 "Both a file path and a DataFrame have been passed to Database, will use the database and ignore the file."
             )
-        elif filepath is not None and os.path.isfile(filepath):
+        elif filepath is not None:
+            if not os.path.isfile(filepath):
+                logging.getLogger("jang").warning("Input files does not exist, starting from empty database.")
             self.db = pd.read_csv(filepath, index_col=0)
+            if self.name is None:
+                self.name = os.path.splitext(os.path.basename(filepath))[0]
 
     def add_entry(self, name: str, h5path: str, fitspath: str):
         entry = {"h5_filepath": h5path, "fits_filepath": fitspath}
@@ -215,11 +226,14 @@ class Database:
     def find_gw(self, name: str):
         if name not in self.db.index:
             raise RuntimeError("[gw.Database] Missing index %s in the database." % name)
-        return GW(
+        gw = GW(
             name,
             path_to_samples=self.db.loc[name]["h5_filepath"],
             path_to_fits=self.db.loc[name]["fits_filepath"],
         )
+        if self.name is not None:
+            gw.catalog = self.name
+        return gw
 
     def list_all(self):
         return list(self.db.index)
@@ -260,3 +274,17 @@ class Database:
             raise RuntimeError("[gw.Database] No output file was provided.")
         self.db.sort_index(inplace=True)
         self.db.to_csv(outfile)
+
+
+def get_search_region(detector: jang.neutrinos.Detector, gw: GW, parameters: jang.parameters.Parameters):
+
+    region = gw.fits.get_signal_region(
+        parameters.nside, parameters.get_searchregion_gwfraction()
+    )
+    if not parameters.get_searchregion_iszeroincluded():
+        region_nonzero = detector.get_nonempty_acceptance_pixels(
+            parameters.spectrum, parameters.nside
+        )
+        region = np.intersect1d(region, region_nonzero)
+
+    return region
