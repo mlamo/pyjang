@@ -55,7 +55,7 @@ class Parameters:
             return float(spl[1]) / 100
         if len(spl) == 1 and spl[0] == "bestfit":
             return 0
-        return np.nan
+        return None
 
     def get_searchregion_iszeroincluded(self) -> bool:
         """Returns True if the pixels with zero acceptance should be included."""

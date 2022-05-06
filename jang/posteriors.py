@@ -5,7 +5,7 @@ from scipy.special import factorial
 from scipy.interpolate import interp1d
 from typing import Tuple
 
-from jang.gw import GW
+from jang.gw import GW, get_search_region
 from jang.neutrinos import Detector
 from jang.parameters import Parameters
 import jang.conversions
@@ -92,16 +92,8 @@ def compute_flux_posterior(
         parameters.nside = nside
     elif parameters.nside != nside:
         raise RuntimeError("Something went wrong with map resolutions!")
-    region_gw = gw.fits.get_signal_region(
-        parameters.nside, parameters.get_searchregion_gwfraction()
-    )
-    if not parameters.get_searchregion_iszeroincluded():
-        region_nonzero = detector.get_nonempty_acceptance_pixels(
-            parameters.spectrum, parameters.nside
-        )
-        region_restricted = np.intersect1d(region_gw, region_nonzero)
-    else:
-        region_restricted = region_gw
+
+    region_restricted = get_search_region(detector, gw, parameters)
     toys_gw = gw.samples.prepare_toys(
         "ra",
         "dec",
@@ -164,16 +156,8 @@ def compute_etot_posterior(
         parameters.nside = nside
     elif parameters.nside != nside:
         raise RuntimeError("Something went wrong with map resolutions!")
-    region_gw = gw.fits.get_signal_region(
-        parameters.nside, parameters.get_searchregion_gwfraction()
-    )
-    if not parameters.get_searchregion_iszeroincluded():
-        region_nonzero = detector.get_nonempty_acceptance_pixels(
-            parameters.spectrum, parameters.nside
-        )
-        region_restricted = np.intersect1d(region_gw, region_nonzero)
-    else:
-        region_restricted = region_gw
+
+    region_restricted = get_search_region(detector, gw, parameters)
     toys_gw = gw.samples.prepare_toys(
         "ra",
         "dec",
@@ -246,16 +230,8 @@ def compute_fnu_posterior(
         parameters.nside = nside
     elif parameters.nside != nside:
         raise RuntimeError("Something went wrong with map resolutions!")
-    region_gw = gw.fits.get_signal_region(
-        parameters.nside, parameters.get_searchregion_gwfraction()
-    )
-    if not parameters.get_searchregion_iszeroincluded():
-        region_nonzero = detector.get_nonempty_acceptance_pixels(
-            parameters.spectrum, parameters.nside
-        )
-        region_restricted = np.intersect1d(region_gw, region_nonzero)
-    else:
-        region_restricted = region_gw
+
+    region_restricted = get_search_region(detector, gw, parameters)
     toys_gw = gw.samples.prepare_toys(
         "ra",
         "dec",
