@@ -17,9 +17,11 @@ import scipy.integrate
 from scipy.linalg import block_diag
 from scipy.stats import multivariate_normal, truncnorm, gamma
 from typing import List, Optional, Tuple, Union
+import warnings
 import yaml
 
 matplotlib.use("Agg")
+warnings.filterwarnings("ignore", category=scipy.integrate.IntegrationWarning)
 
 
 def infer_uncertainties(
@@ -262,7 +264,7 @@ class DetectorBase(abc.ABC):
         for acc in accs:
             for ipix in range(npix):
                 acctot[ipix] += acc.evaluate(ipix, nside)
-        return np.nonzero(acctot)
+        return np.nonzero(acctot)[0]
 
     def prepare_toys(self, ntoys: int = 0) -> List[ToyResult]:
 
