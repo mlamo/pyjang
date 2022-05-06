@@ -15,6 +15,20 @@ import jang.posteriors
 matplotlib.use("Agg")
 
 
+def plot_likelihood(
+    x: np.ndarray, y: np.ndarray, limit: float, xlabel: str, outfile: str
+):
+
+    plt.close("all")
+    plt.plot(x, y)
+    plt.xscale("log")
+    plt.xlabel(xlabel)
+    plt.ylabel("Posterior")
+    plt.axvline(limit, color="red", label=r"90% upper limit")
+    plt.legend(loc="upper right")
+    plt.savefig(outfile, dpi=300)
+
+
 def get_limit_flux(
     detector: DetectorBase,
     gw: GW,
@@ -29,12 +43,7 @@ def get_limit_flux(
     if saved_lkl is not None:
         os.makedirs(os.path.dirname(saved_lkl), exist_ok=True)
         np.save(saved_lkl + ".npy", [x, y])
-        plt.close("all")
-        plt.plot(x, y)
-        plt.xscale("log")
-        plt.xlabel(r"Flux normalisation")
-        plt.ylabel("Posterior")
-        plt.savefig(saved_lkl + ".png", dpi=300)
+        plot_likelihood(x, y, limit, "Flux normalization", saved_lkl + ".png")
     logging.getLogger("jang").info(
         "[Limits] %s, %s, %s, limit(Flux) = %.3e",
         gw.name,
@@ -59,12 +68,7 @@ def get_limit_etot(
     if saved_lkl is not None:
         os.makedirs(os.path.dirname(saved_lkl), exist_ok=True)
         np.save(saved_lkl + ".npy", [x, y])
-        plt.close("all")
-        plt.plot(x, y)
-        plt.xscale("log")
-        plt.xlabel(r"$E^{tot}_{\nu}$")
-        plt.ylabel("Posterior")
-        plt.savefig(saved_lkl + ".png", dpi=300)
+        plot_likelihood(x, y, limit, r"$E^{tot}_{\nu}$", saved_lkl + ".png")
     logging.getLogger("jang").info(
         "[Limits] %s, %s, %s, %s, limit(Etot) = %.3e erg",
         gw.name,
@@ -90,12 +94,7 @@ def get_limit_fnu(
     if saved_lkl is not None:
         os.makedirs(os.path.dirname(saved_lkl), exist_ok=True)
         np.save(saved_lkl + ".npy", [x, y])
-        plt.close("all")
-        plt.plot(x, y)
-        plt.xscale("log")
-        plt.xlabel(r"$E^{tot}_{\nu}/E_{rad}$")
-        plt.ylabel("Posterior")
-        plt.savefig(saved_lkl + ".png", dpi=300)
+        plot_likelihood(x, y, limit, r"$E^{tot}_{\nu}/E_{rad}$", saved_lkl + ".png")
     logging.getLogger("jang").info(
         "[Limits] %s, %s, %s, %s, limit(fnu) = %.3e",
         gw.name,
