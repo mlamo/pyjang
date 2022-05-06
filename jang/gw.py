@@ -28,7 +28,7 @@ priorities = [
     "IMRPhenomNSBH:LowSpin",
     "C01:Mixed",
     "Mixed",
-    "PublicationSamples"
+    "PublicationSamples",
 ]
 
 
@@ -44,7 +44,7 @@ class GW:
         self.fits = None
         self.samples = None
         self.logger = logger
-        self.catalog = ''
+        self.catalog = ""
         if path_to_fits is not None:
             self.set_fits(path_to_fits)
         if path_to_samples is not None:
@@ -83,7 +83,9 @@ class GWFits:
             skymap *= 1 / np.sum(skymap)
         return skymap
 
-    def get_signal_region(self, nside: int = None, contained_prob: float = 0.90) -> np.ndarray:
+    def get_signal_region(
+        self, nside: int = None, contained_prob: float = 0.90
+    ) -> np.ndarray:
         """Get the region containing a given probability of the skymap, for a given resolution."""
         skymap = self.get_skymap(nside)
         npix = hp.get_map_size(skymap)
@@ -199,7 +201,10 @@ class Database:
     """Database containing all GW events."""
 
     def __init__(
-        self, filepath: Optional[str] = None, db: Optional[pd.DataFrame] = None, name: Optional[str] = None
+        self,
+        filepath: Optional[str] = None,
+        db: Optional[pd.DataFrame] = None,
+        name: Optional[str] = None,
     ):
         self._filepath = filepath
         self.db = db
@@ -210,7 +215,9 @@ class Database:
             )
         elif filepath is not None:
             if not os.path.isfile(filepath):
-                logging.getLogger("jang").warning("Input files does not exist, starting from empty database.")
+                logging.getLogger("jang").warning(
+                    "Input files does not exist, starting from empty database."
+                )
             self.db = pd.read_csv(filepath, index_col=0)
             if self.name is None:
                 self.name = os.path.splitext(os.path.basename(filepath))[0]
@@ -276,7 +283,9 @@ class Database:
         self.db.to_csv(outfile)
 
 
-def get_search_region(detector: jang.neutrinos.Detector, gw: GW, parameters: jang.parameters.Parameters):
+def get_search_region(
+    detector: jang.neutrinos.Detector, gw: GW, parameters: jang.parameters.Parameters
+):
 
     region = gw.fits.get_signal_region(
         parameters.nside, parameters.get_searchregion_gwfraction()
