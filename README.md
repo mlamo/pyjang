@@ -4,6 +4,7 @@ Joint Analysis of Neutrinos and Gravitational waves
 ![logo](https://github.com/mlamo/pyjang/blob/main/doc/logo.png?raw=true)
 
 [![tests](https://github.com/mlamo/pyjang/actions/workflows/tests.yml/badge.svg)](https://github.com/mlamo/pyjang/actions/workflows/tests.yml)
+[![codecov](https://codecov.io/gh/mlamo/pyjang/branch/main/graph/badge.svg?token=PVBSZ9P7TR)](https://codecov.io/gh/mlamo/pyjang)
 
 Installation
 ===================================================
