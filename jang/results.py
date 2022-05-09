@@ -41,9 +41,9 @@ class Database:
         limit_flux: float,
         limit_etot: float,
         limit_fnu: float,
-        file_lkl_flux: str,
-        file_lkl_etot: str,
-        file_lkl_fnu: str,
+        file_lkl_flux: str = None,
+        file_lkl_etot: str = None,
+        file_lkl_fnu: str = None,
         custom: Optional[dict] = None,
     ):
         """Adds new entry to the database."""
@@ -203,7 +203,7 @@ class Database:
         plt.ylabel(r"$E^{90\%}_{tot,\nu}$ [erg]", fontsize=16)
         plt.xscale("log")
         plt.yscale("log")
-        plt.tight_layout()
+        # plt.tight_layout()
         plt.savefig(outfile, dpi=300)
 
     def plot_fnu_vs_distance(self, outfile: str, cat: Optional[dict] = None):
@@ -239,7 +239,7 @@ class Database:
         plt.ylabel(r"$E^{90\%}_{tot,\nu}/E_{radiated}$", fontsize=16)
         plt.xscale("log")
         plt.yscale("log")
-        plt.tight_layout()
+        # plt.tight_layout()
         plt.savefig(outfile, dpi=300)
 
     def plot_flux(self, outfile: str, cat: Optional[dict] = None):
@@ -289,5 +289,5 @@ class Database:
         plt.grid(axis="y", which="major")
         plt.grid(axis="y", which="minor", linewidth=0.6)
         plt.grid(axis="x", which="major", linestyle="--")
-        plt.tight_layout()
+        # plt.tight_layout()
         plt.savefig(outfile, dpi=300)

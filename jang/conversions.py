@@ -23,10 +23,6 @@ class JetModelBase(metaclass=abc.ABCMeta):
         """Conversion to total energy to the equivalent isotropic energy."""
         pass
 
-    @abc.abstractmethod
-    def prior(self):
-        pass
-
     @property
     def str_filename(self):
         return self.__repr__().lower().replace(",", "_").replace(" ", "")
@@ -35,13 +31,10 @@ class JetModelBase(metaclass=abc.ABCMeta):
 class JetIsotropic(JetModelBase):
     """Isotropic emission of neutrinos."""
 
-    def __init__(self, jet_opening: float = np.inf):
-        super().__init__(jet_opening)
+    def __init__(self):
+        super().__init__(np.inf)
 
     def etot_to_eiso(self, viewing_angle: float) -> float:
-        return 1
-
-    def prior(self) -> float:
         return 1
 
     def __repr__(self):
@@ -71,11 +64,6 @@ class JetVonMises(JetModelBase):
             / np.sinh(self.kappa)
         )
 
-    def prior(self) -> float:
-        if self.jet_opening < 0:
-            return 0
-        return 1
-
     def __repr__(self):
         return "VonMises,%.1f deg%s" % (
             self.jet_opening,
@@ -103,15 +91,6 @@ class JetRectangular(JetModelBase):
         if viewing_angle <= self.jet_opening:
             return 2 / (1 - np.cos(self.jet_opening))
         return 0
-
-    def prior(self) -> float:
-        if np.isinf(self.jet_opening):
-            return 1
-        if self.jet_opening < 0:
-            return 0
-        if self.jet_opening > np.pi / 2 if self.with_counter else np.pi:
-            return 0
-        return 1
 
     def __repr__(self):
         return "Constant,%.1f deg%s)" % (
@@ -141,9 +120,11 @@ def phi_to_eiso(
     return integration * (4 * np.pi * distance_cm ** 2) / erg_to_GeV
 
 
-def eiso_to_phi(energy_range: tuple, gamma: float = 2, distance: float = 1) -> float:
+def eiso_to_phi(
+    energy_range: tuple, spectrum: str = "x**-2", distance: float = 1
+) -> float:
     """Convert from total isotropic energy to flux normalization for a given spectrum and distance."""
-    return 1 / phi_to_eiso(energy_range, gamma, distance)
+    return 1 / phi_to_eiso(energy_range, spectrum, distance)
 
 
 def etot_to_eiso(viewing_angle: float, model: JetModelBase) -> float:

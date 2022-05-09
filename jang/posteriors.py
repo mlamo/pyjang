@@ -89,9 +89,11 @@ def compute_flux_posterior(
 
     acceptances, nside = detector.get_acceptances(parameters.spectrum)
     if parameters.nside is None:
-        parameters.nside = nside
+        parameters.nside = nside  # pragma: no cover
     elif parameters.nside != nside:
-        raise RuntimeError("Something went wrong with map resolutions!")
+        raise RuntimeError(
+            "Something went wrong with map resolutions!"
+        )  # pragma: no cover
 
     region_restricted = get_search_region(detector, gw, parameters)
     toys_gw = gw.samples.prepare_toys(
@@ -153,9 +155,11 @@ def compute_etot_posterior(
 
     acceptances, nside = detector.get_acceptances(parameters.spectrum)
     if parameters.nside is None:
-        parameters.nside = nside
+        parameters.nside = nside  # pragma: no cover
     elif parameters.nside != nside:
-        raise RuntimeError("Something went wrong with map resolutions!")
+        raise RuntimeError(
+            "Something went wrong with map resolutions!"
+        )  # pragma: no cover
 
     region_restricted = get_search_region(detector, gw, parameters)
     toys_gw = gw.samples.prepare_toys(
@@ -227,9 +231,11 @@ def compute_fnu_posterior(
 
     acceptances, nside = detector.get_acceptances(parameters.spectrum)
     if parameters.nside is None:
-        parameters.nside = nside
+        parameters.nside = nside  # pragma: no cover
     elif parameters.nside != nside:
-        raise RuntimeError("Something went wrong with map resolutions!")
+        raise RuntimeError(
+            "Something went wrong with map resolutions!"
+        )  # pragma: no cover
 
     region_restricted = get_search_region(detector, gw, parameters)
     toys_gw = gw.samples.prepare_toys(

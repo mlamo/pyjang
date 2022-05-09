@@ -124,7 +124,9 @@ class GWSamples:
                 self.sample_name = sample
                 break
         if self.sample_name is None:
-            raise RuntimeError(f"Did not find a correct sample in {self.file}")
+            raise RuntimeError(
+                f"Did not find a correct sample in {self.file}"
+            )  # pragma: no cover
         return self.sample_name
 
     def get_variables(self, *variables) -> dict:
@@ -138,10 +140,12 @@ class GWSamples:
         variables_corrected = []
         for var in variables:
             if var not in variables_h5:
-                if (var + "_non_evolved") in variables_h5:
-                    variables_corrected.append(var + "_non_evolved")
-                else:
-                    raise RuntimeError("Missing variable %s in h5 file." % var)
+                if (var + "_non_evolved") in variables_h5:  # pragma: no cover
+                    variables_corrected.append(var + "_non_evolved")  # pragma: no cover
+                else:  # pragma: no cover
+                    raise RuntimeError(
+                        "Missing variable %s in h5 file." % var
+                    )  # pragma: no cover
             else:
                 variables_corrected.append(var)
         data = {}
@@ -178,8 +182,8 @@ class GWSamples:
         if self.mass1 > 3:
             if self.mass2 > 3:
                 return "BBH"
-            return "NSBH"
-        return "BNS"
+            return "NSBH"  # pragma: no cover
+        return "BNS"  # pragma: no cover
 
     def prepare_toys(
         self, *variables, nside: int, region_restriction: Optional[np.ndarray] = None
@@ -218,7 +222,8 @@ class Database:
                 logging.getLogger("jang").warning(
                     "Input files does not exist, starting from empty database."
                 )
-            self.db = pd.read_csv(filepath, index_col=0)
+            else:
+                self.db = pd.read_csv(filepath, index_col=0)
             if self.name is None:
                 self.name = os.path.splitext(os.path.basename(filepath))[0]
 

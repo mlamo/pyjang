@@ -85,6 +85,9 @@ def stack_events_weightedevents(
         x, y = np.load(ev["Results.likelihoods_fnu"] + ".npy")
         f = interp1d(x, y, bounds_error=False, fill_value=(y[0], y[-1]))
         loglkl_fnu[ev["GW.name"]] = np.log(f(fnu_arr))
+    if len(loglkl_fnu.items()) != len(gw_withweights):
+        log.error("Some wanted GWs have not been found.")
+        return np.inf, np.inf
     results = []
     for _ in range(npe):
         sumloglkl_etot = np.zeros_like(etot_arr)
@@ -110,7 +113,8 @@ def stack_events_weightedevents(
     plt.xlabel(r"$E^{90\%}_{tot,\nu}$ [erg]")
     plt.ylabel("# of pseudo-experiments")
     plt.axvline(np.median(results[:, 1]), color="red")
-    plt.savefig(outfile, dpi=300)
+    if outfile is not None:
+        plt.savefig(outfile, dpi=300)
 
     plt.close("all")
     min_fnu = np.min(np.ma.masked_invalid(np.log10(results[:, 2]))) - 0.1
@@ -120,9 +124,10 @@ def stack_events_weightedevents(
     plt.xlabel(r"$E^{90\%}_{tot,\nu}/E_{radiated}$")
     plt.ylabel("# of pseudo-experiments")
     plt.axvline(np.median(results[:, 2]), color="red")
-    plt.savefig(
-        f"{os.path.splitext(outfile)[0]}_fnu{os.path.splitext(outfile)[1]}", dpi=300
-    )
+    if outfile is not None:
+        plt.savefig(
+            f"{os.path.splitext(outfile)[0]}_fnu{os.path.splitext(outfile)[1]}", dpi=300
+        )
 
     return np.median(results[:, 1]), np.median(results[:, 2])
 

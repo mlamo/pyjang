@@ -44,10 +44,12 @@ class Parameters:
     @property
     def str_filename(self):
         """Get the representation of the parameters in string format for suffixing filenames."""
-        str_model = self.spectrum.replace("x", "E").replace("**", "")
+        str_model = []
+        if self.spectrum is not None:
+            str_model.append(self.spectrum.replace("x", "E").replace("**", ""))
         if self.jet is not None:
-            str_model += "_" + self.jet.str_filename
-        return str_model
+            str_model.append("_" + self.jet.str_filename)
+        return "_".join(str_model)
 
     def get_searchregion_gwfraction(self) -> float:
         spl = self.search_region.split("_")

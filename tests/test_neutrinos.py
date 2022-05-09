@@ -33,6 +33,11 @@ class TestSample(unittest.TestCase):
         self.assertEqual(self.s1.nobserved, 0)
         self.assertEqual(self.s1.background.nominal, 0.5)
 
+    def test_background(self):
+        print(BackgroundFixed(1))
+        print(BackgroundGaussian(1, 0.1))
+        print(BackgroundPoisson(10, 10))
+
 
 class TestDetector(unittest.TestCase):
     def setUp(self):
@@ -77,6 +82,9 @@ class TestDetector(unittest.TestCase):
         self.assertEqual(self.d2.get_acceptances("x**-2")[0][0].evaluate(0), 0)
         with self.assertRaises(RuntimeError):
             self.d2.get_acceptances("x**-3")
+        self.d2.set_acceptances([0, 0, 0, np.zeros(hp.nside2npix(4))], "x**-2.5")
+        with self.assertRaises(RuntimeError):
+            self.d2.get_acceptances("x**-2.5")
         #
         with self.assertRaises(ValueError):
             Acceptance(np.ones(13))
@@ -169,6 +177,8 @@ class TestEffectiveArea(unittest.TestCase):
         det = Detector(self.dict_det)
         aeff = MyEffectiveArea(det.samples[0])
         aeff.to_acceptance(det, 4, 2450000, "x**-2")
+        with self.assertRaises(RuntimeError):
+            aeff.to_acceptance(det, None, 2450000, "x**-2")
 
 
 class TestOther(unittest.TestCase):
