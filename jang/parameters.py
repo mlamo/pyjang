@@ -48,7 +48,7 @@ class Parameters:
         if self.spectrum is not None:
             str_model.append(self.spectrum.replace("x", "E").replace("**", ""))
         if self.jet is not None:
-            str_model.append("_" + self.jet.str_filename)
+            str_model.append(self.jet.str_filename)
         return "_".join(str_model)
 
     def get_searchregion_gwfraction(self) -> float:

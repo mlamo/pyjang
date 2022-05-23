@@ -172,7 +172,7 @@ class BackgroundPoisson(Background):
         return self.Noff / self.nregions
 
     def __repr__(self):
-        return f"{self.nominal:.2e}={self.Noff:d}/{self.nregions:d}"
+        return f"{self.nominal:.2e} = {self.Noff:d}/{self.nregions:d}"
 
 
 class Sample:

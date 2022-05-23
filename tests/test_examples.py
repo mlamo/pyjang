@@ -144,6 +144,9 @@ class TestExamples(unittest.TestCase):
         database_res.plot_fnu_vs_distance(f"{self.tmpdir}/fnu.png", cat=cat)
         database_res.plot_flux(f"{self.tmpdir}/flux.png")
         database_res.plot_flux(f"{self.tmpdir}/flux.png", cat=cat)
+        database_res.plot_summary_observations(
+            f"{self.tmpdir}/obs.png", {s.shortname: "black" for s in self.det.samples}
+        )
         #
         jang.stacking.stack_events(database_res, self.pars)
         with self.assertLogs(level="ERROR"):

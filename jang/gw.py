@@ -16,6 +16,7 @@ import jang.neutrinos
 import jang.parameters
 
 priorities = [
+    "PublicationSamples",
     "C01:IMRPhenomXPHM",
     "IMRPhenomXPHM",
     "C01:IMRPhenomPv3HM",
@@ -28,7 +29,6 @@ priorities = [
     "IMRPhenomNSBH:LowSpin",
     "C01:Mixed",
     "Mixed",
-    "PublicationSamples",
 ]
 
 
@@ -113,16 +113,22 @@ class GWSamples:
         self.mass2 = None
 
     def find_correct_sample(self) -> str:
-        """Find the correct posterior samples, first available one
+        """Find the correct posterior samples, take the first available one
         from the list in the global variable 'priorities' in gw.py.
         """
         f = h5py.File(self.file, "r")
         keys = list(f.keys())
-        f.close()
         for sample in priorities:
             if sample in keys:
-                self.sample_name = sample
-                break
+                # check that radiated_energy is there
+                if (
+                    "radiated_energy" in f[sample]["posterior_samples"][:].dtype.names
+                    or "radiated_energy_non_evolved"
+                    in f[sample]["posterior_samples"][:].dtype.names
+                ):
+                    self.sample_name = sample
+                    break
+        f.close()
         if self.sample_name is None:
             raise RuntimeError(
                 f"Did not find a correct sample in {self.file}"
@@ -144,7 +150,7 @@ class GWSamples:
                     variables_corrected.append(var + "_non_evolved")  # pragma: no cover
                 else:  # pragma: no cover
                     raise RuntimeError(
-                        "Missing variable %s in h5 file." % var
+                        f"Missing variable {var} in h5 file."
                     )  # pragma: no cover
             else:
                 variables_corrected.append(var)
@@ -164,16 +170,10 @@ class GWSamples:
         return self.mass1, self.mass2
 
     @cached_property
-    def distance_mean(self) -> float:
+    def distance_5_50_95(self) -> float:
         """Mean luminosity distance based on posterior samples."""
         dist = self.get_variables("luminosity_distance")
-        return np.mean(dist["luminosity_distance"])
-
-    @cached_property
-    def distance_error(self) -> float:
-        """Mean luminosity distance based on posterior samples."""
-        dist = self.get_variables("luminosity_distance")
-        return np.std(dist["luminosity_distance"])
+        return np.percentile(dist["luminosity_distance"], [5, 50, 95])
 
     @cached_property
     def type(self) -> str:
@@ -267,9 +267,9 @@ class Database:
             selected = True
             if gwtype is not None and gw.samples.type != gwtype:
                 selected = False
-            if mindist is not None and gw.samples.distance_mean < mindist:
+            if mindist is not None and gw.samples.distance_5_50_95[1] < mindist:
                 selected = False
-            if maxdist is not None and gw.samples.distance_mean > maxdist:
+            if maxdist is not None and gw.samples.distance_5_50_95[1] > maxdist:
                 selected = False
             if selected:
                 selected_gw.append(idx)

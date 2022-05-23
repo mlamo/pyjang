@@ -58,23 +58,30 @@ class Database:
             ]
         else:
             raise TypeError("Unsupported object as detector.")
+
+        dist = gw.samples.distance_5_50_95
         entry = {
             "Detector.name": detector.name,
-            "Detector.samples": sample_names,
-            "Detector.error_acceptance": list(
-                np.sqrt(np.diag(detector.error_acceptance))
+            "Detector.samples": ",".join(sample_names),
+            "Detector.error_acceptance": ",".join(
+                [f"{e:.3e}" for e in np.sqrt(np.diag(detector.error_acceptance))]
             )
             if parameters.apply_det_systematics
             else "",
-            "Detector.results.nobserved": [s.nobserved for s in detector.samples],
-            "Detector.results.nbackground": [s.background for s in detector.samples],
+            "Detector.results.nobserved": ",".join(
+                [f"{s.nobserved:d}" for s in detector.samples]
+            ),
+            "Detector.results.nbackground": ",".join(
+                [f"{s.background}" for s in detector.samples]
+            ),
             "GW.catalog": gw.catalog,
             "GW.name": gw.name,
             "GW.mass1": gw.samples.masses[0],
             "GW.mass2": gw.samples.masses[1],
             "GW.type": gw.samples.type,
-            "GW.distance_mean": gw.samples.distance_mean,
-            "GW.distance_error": gw.samples.distance_error,
+            "GW.distance_median": dist[1],
+            "GW.distance_errorminus": dist[1] - dist[0],
+            "GW.distance_errorplus": dist[2] - dist[1],
             "Parameters.systematics": "on"
             if parameters.apply_det_systematics
             else "off",
@@ -176,9 +183,12 @@ class Database:
         plt.close("all")
         if cat is None:
             plt.errorbar(
-                x=self.db["GW.distance_mean"],
+                x=self.db["GW.distance_median"],
                 y=self.db["Results.limit_etot"],
-                xerr=self.db["GW.distance_error"],
+                xerr=[
+                    self.db["GW.distance_errorminus"],
+                    self.db["GW.distance_errorplus"],
+                ],
                 linewidth=0,
                 elinewidth=1,
                 marker="x",
@@ -189,9 +199,12 @@ class Database:
             ):
                 db_cat = self.db[self.db[cat["column"]] == c]
                 plt.errorbar(
-                    x=db_cat["GW.distance_mean"],
+                    x=db_cat["GW.distance_median"],
                     y=db_cat["Results.limit_etot"],
-                    xerr=db_cat["GW.distance_error"],
+                    xerr=[
+                        db_cat["GW.distance_errorminus"],
+                        db_cat["GW.distance_errorplus"],
+                    ],
                     linewidth=0,
                     elinewidth=1,
                     color=col,
@@ -199,11 +212,12 @@ class Database:
                     label=lab,
                 )
             plt.legend(loc="upper left", fontsize=17)
+        plt.xlim((1e2, 2e4))
         plt.xlabel("distance [Mpc]", fontsize=16)
         plt.ylabel(r"$E^{90\%}_{tot,\nu}$ [erg]", fontsize=16)
         plt.xscale("log")
         plt.yscale("log")
-        # plt.tight_layout()
+        plt.tight_layout()
         plt.savefig(outfile, dpi=300)
 
     def plot_fnu_vs_distance(self, outfile: str, cat: Optional[dict] = None):
@@ -212,9 +226,12 @@ class Database:
         plt.close("all")
         if cat is None:
             plt.errorbar(
-                x=self.db["GW.distance_mean"],
+                x=self.db["GW.distance_median"],
                 y=self.db["Results.limit_fnu"],
-                xerr=self.db["GW.distance_error"],
+                xerr=[
+                    self.db["GW.distance_errorminus"],
+                    self.db["GW.distance_errorplus"],
+                ],
                 linewidth=0,
                 elinewidth=1,
                 marker="x",
@@ -225,9 +242,12 @@ class Database:
             ):
                 db_cat = self.db[self.db[cat["column"]] == c]
                 plt.errorbar(
-                    x=db_cat["GW.distance_mean"],
+                    x=db_cat["GW.distance_median"],
                     y=db_cat["Results.limit_fnu"],
-                    xerr=db_cat["GW.distance_error"],
+                    xerr=[
+                        db_cat["GW.distance_errorminus"],
+                        db_cat["GW.distance_errorplus"],
+                    ],
                     linewidth=0,
                     elinewidth=1,
                     color=col,
@@ -239,15 +259,16 @@ class Database:
         plt.ylabel(r"$E^{90\%}_{tot,\nu}/E_{radiated}$", fontsize=16)
         plt.xscale("log")
         plt.yscale("log")
-        # plt.tight_layout()
+        plt.tight_layout()
         plt.savefig(outfile, dpi=300)
 
     def plot_flux(self, outfile: str, cat: Optional[dict] = None):
 
         plt.close("all")
-        plt.figure(figsize=(15, 5))
+        plt.figure(figsize=(16, 6))
         min_flux, max_flux = np.inf, 0
         if cat is None:
+            names = self.db["GW.name"]
             ii = range(len(self.db.index))
             plt.plot(
                 ii,
@@ -259,15 +280,15 @@ class Database:
             )
             min_flux = np.nanmin(self.db["Results.limit_flux"])
             max_flux = np.nanmax(self.db["Results.limit_flux"])
-            plt.xticks(ii, self.db["GW.name"], rotation=65, ha="right", fontsize=15)
+            plt.xticks(
+                np.arange(len(names)), names, rotation=65, ha="right", fontsize=15
+            )
         else:
-            names = []
             for c, col, mar, lab in zip(
                 cat["categories"], cat["colors"], cat["markers"], cat["labels"]
             ):
                 db_cat = self.db[self.db[cat["column"]] == c]
-                ii = np.arange(len(names), len(names) + len(db_cat.index))
-                names += list(db_cat["GW.name"])
+                ii = db_cat.index.values
                 plt.plot(
                     ii,
                     db_cat["Results.limit_flux"],
@@ -279,15 +300,63 @@ class Database:
                 )
                 min_flux = min(min_flux, np.nanmin(self.db["Results.limit_flux"]))
                 max_flux = max(max_flux, np.nanmax(self.db["Results.limit_flux"]))
-            plt.legend(loc="upper center", ncol=3)
+            plt.legend(loc="upper center", ncol=len(cat["categories"]))
             plt.xticks(
-                np.arange(len(names)), names, rotation=65, ha="right", fontsize=15
+                self.db.index.values,
+                self.db["GW.name"],
+                rotation=65,
+                va="top",
+                ha="right",
+                fontsize=15,
             )
+        #
         plt.yscale("log")
         plt.ylabel(r"$E^2\dfrac{dn}{dE}$ [GeV cm$^{-2}$]", fontsize=16)
         plt.ylim((10 ** floor(np.log10(min_flux)), 10 ** ceil(np.log10(max_flux))))
         plt.grid(axis="y", which="major")
         plt.grid(axis="y", which="minor", linewidth=0.6)
         plt.grid(axis="x", which="major", linestyle="--")
-        # plt.tight_layout()
+        plt.tight_layout()
+        plt.savefig(outfile, dpi=300)
+
+    def plot_summary_observations(self, outfile: str, sample_colors: dict):
+
+        names = self.db["GW.name"]
+        nbkg = [
+            [float(n.split(" ")[0]) for n in N.split(",")]
+            for N in self.db["Detector.results.nbackground"]
+        ]
+        nobs = [
+            [int(float(n.split(" ")[0])) for n in N.split(",")]
+            for N in self.db["Detector.results.nobserved"]
+        ]
+        ngw = len(names)
+
+        samples = [S.split(",") for S in self.db["Detector.samples"]]
+
+        x = np.arange(ngw)
+        yoffset = np.zeros(ngw)
+
+        plt.close("all")
+        plt.figure(figsize=(16, 6))
+        for smp, col in sample_colors.items():
+            idxs = [S.index(smp) if smp in S else None for S in samples]
+            bkg = [
+                nbkg[j][idxs[j]] if idxs[j] is not None else np.nan for j in range(ngw)
+            ]
+            obs = [
+                nobs[j][idxs[j]] if idxs[j] is not None else np.nan for j in range(ngw)
+            ]
+            plt.bar(x, bkg, width=0.85, bottom=yoffset, color=col, alpha=0.5)
+            plt.plot(x, obs, marker="*", linewidth=0, color=col)
+            yoffset += np.array(bkg)
+
+        plt.xticks(
+            x, names, rotation=65, va="top", ha="right", fontsize=14,
+        )
+        plt.ylabel("Number of events")
+        plt.yscale("log")
+        plt.grid(axis="x")
+
+        plt.tight_layout()
         plt.savefig(outfile, dpi=300)

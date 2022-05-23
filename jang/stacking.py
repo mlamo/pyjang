@@ -33,7 +33,8 @@ def stack_events_listgw(
             log.warning("Missing likelihood files for %s, skipping...", ev["GW.name"])
             continue
         if ev["GW.name"] in triggers:
-            log.error("%s is present several times in the database.", ev["GW.name"])
+            log.error("%s is present several times in the database, skipping this one!", ev["GW.name"])
+            continue
         triggers.append(ev["GW.name"])
         #
         x, y = np.load(ev["Results.likelihoods_etot"] + ".npy")
@@ -76,7 +77,8 @@ def stack_events_weightedevents(
             log.warning("Missing likelihood files for %s, skipping...", ev["GW.name"])
             continue
         if ev["GW.name"] in loglkl_etot.keys():
-            log.error("%s is present several times in the database.", ev["GW.name"])
+            log.error("%s is present several times in the database, skipping this one!", ev["GW.name"])
+            continue
         #
         x, y = np.load(ev["Results.likelihoods_etot"] + ".npy")
         f = interp1d(x, y, bounds_error=False, fill_value=(y[0], y[-1]))
