@@ -14,6 +14,7 @@ import jang.conversions
 import jang.gw
 import jang.limits
 import jang.results
+import jang.significance
 from jang.neutrinos import Detector, BackgroundGaussian
 from jang.parameters import Parameters
 
@@ -39,6 +40,9 @@ def single_event(
     antares.set_acceptances(det_results["acceptances"], pars.spectrum, pars.nside)
     bkg = [BackgroundGaussian(b, 0.20 * b) for b in det_results["nbkg"]]
     antares.set_observations(det_results["nobs"], bkg)
+
+    P0 = jang.significance.compute_prob_null_hypothesis(antares, gw, pars)
+    print(f"Prob(null) = {100*P0:.2f}%")
 
     path_to_lkl = {"flux": None, "eiso": None, "fnu": None}
     if dbfile is not None:
@@ -73,8 +77,8 @@ if __name__ == "__main__":
     gwdb = "examples/input_files/gw_catalogs/database_example.csv"
     npix = hp.nside2npix(8)
     detresults = {
-        "nobs": [0, 0, 0, 0],
+        "nobs": [2, 0, 0, 0],
         "nbkg": [0.5, 0, 0.3, 0],
-        "acceptances": [np.ones(npix), np.zeros(npix), np.ones(npix), np.zeros(npix)],
+        "acceptances": [np.ones(npix), np.zeros(npix), np.ones(npix), np.zeros(npix),],
     }
     single_event("GW190412", gwdb, detresults, parameters)

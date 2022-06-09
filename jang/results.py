@@ -104,7 +104,7 @@ class Database:
         if self.db is None:
             self.db = newline
         else:
-            self.db = self.db.append(newline, ignore_index=True)
+            self.db = pd.concat([self.db, newline], ignore_index=True)
 
     def save(self, filepath: Optional[str] = None):
         """Save the datavase to specified CSV or, by default, to the one defined when initialising the Database."""

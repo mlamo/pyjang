@@ -32,6 +32,12 @@ priorities = [
 ]
 
 
+class ToyGW:
+    def __init__(self, dic: dict):
+        for k, v in dic.items():
+            setattr(self, k, v)
+
+
 class GW:
     def __init__(
         self,
@@ -190,7 +196,9 @@ class GWSamples:
     ) -> dict:
         """Prepare GW toys with an eventual restriction to the considered sky region."""
         toys = self.get_variables(*variables)
+        dtypes = [(v, "f8") for v in variables]
         toys["ipix"] = hp.ang2pix(nside, np.pi / 2 - toys["dec"], toys["ra"])
+        dtypes += [("ipix", "i8")]
 
         if region_restriction is not None:
             to_keep = [
@@ -198,6 +206,9 @@ class GWSamples:
             ]
             for k in toys.keys():
                 toys[k] = toys[k][to_keep]
+
+        ntoys = len(toys["ipix"])
+        toys = [ToyGW({k: v[i] for k, v in toys.items()}) for i in range(ntoys)]
         return toys
 
 
@@ -233,7 +244,7 @@ class Database:
         if self.db is None:
             self.db = newline
         else:
-            self.db = self.db.append(newline)
+            self.db = pd.concat([self.db, newline])
 
     def find_gw(self, name: str):
         if name not in self.db.index:

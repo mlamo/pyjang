@@ -8,6 +8,7 @@ from typing import Tuple
 from jang.gw import GW, get_search_region
 from jang.neutrinos import Detector
 from jang.parameters import Parameters
+from jang.analysis import Analysis
 import jang.conversions
 
 
@@ -45,10 +46,7 @@ def poisson_one_sample(
 
 
 def poisson_several_samples(
-    nobserved: np.ndarray,
-    nbackground: np.ndarray,
-    conv: np.ndarray,
-    var: np.ndarray,
+    nobserved: np.ndarray, nbackground: np.ndarray, conv: np.ndarray, var: np.ndarray,
 ) -> np.ndarray:
     """Compute the multi-sample Poisson lkl. Each argument are arrays with one entry per sample."""
     lkl = np.ones_like(var)
@@ -87,54 +85,18 @@ def compute_flux_posterior(
         np.ndarray: array of computed posterior
     """
 
-    acceptances, nside = detector.get_acceptances(parameters.spectrum)
-    if parameters.nside is None:
-        parameters.nside = nside  # pragma: no cover
-    elif parameters.nside != nside:
-        raise RuntimeError(
-            "Something went wrong with map resolutions!"
-        )  # pragma: no cover
+    ana = Analysis(gw=gw, detector=detector, parameters=parameters)
 
-    region_restricted = get_search_region(detector, gw, parameters)
-    toys_gw = gw.samples.prepare_toys(
-        "ra",
-        "dec",
-        nside=parameters.nside,
-        region_restriction=region_restricted,
-    )
-    ntoys_gw = len(toys_gw["ipix"])
-
-    if parameters.apply_det_systematics:
-        ntoys_det = parameters.ntoys_det_systematics
-        toys_det = detector.prepare_toys(ntoys_det)
-    else:
-        ntoys_det = 1
-        toys_det = detector.prepare_toys(0)
     x_arr = np.logspace(*parameters.range_flux)
     post_arr = np.zeros_like(x_arr)
 
-    for idet in range(ntoys_det):
-        for igw in range(ntoys_gw):
-            ipix = toys_gw["ipix"][igw]
-            phi_to_nsig = np.array(
-                [
-                    acc.evaluate(ipix, nside=parameters.nside)
-                    for i, acc in enumerate(acceptances)
-                ]
-            )
-            phi_to_nsig *= toys_det[idet].var_acceptance
-            phi_to_nsig /= 6
-            post_arr += poisson_several_samples(
-                toys_det[idet].nobserved,
-                toys_det[idet].nbackground,
-                phi_to_nsig,
-                x_arr,
-            ) * prior_signal(
-                x_arr,
-                toys_det[idet].nbackground,
-                phi_to_nsig,
-                parameters.prior_signal,
-            )
+    for toy in ana.toys:
+        phi_to_nsig = ana.phi_to_nsig(toy)
+        post_arr += poisson_several_samples(
+            toy[1].nobserved, toy[1].nbackground, phi_to_nsig, x_arr,
+        ) * prior_signal(
+            x_arr, toy[1].nbackground, phi_to_nsig, parameters.prior_signal,
+        )
     return x_arr, post_arr
 
 
@@ -153,64 +115,19 @@ def compute_etot_posterior(
         np.ndarray: array of computed posterior
     """
 
-    acceptances, nside = detector.get_acceptances(parameters.spectrum)
-    if parameters.nside is None:
-        parameters.nside = nside  # pragma: no cover
-    elif parameters.nside != nside:
-        raise RuntimeError(
-            "Something went wrong with map resolutions!"
-        )  # pragma: no cover
+    ana = Analysis(gw=gw, detector=detector, parameters=parameters)
+    ana.add_gw_variables("luminosity_distance", "theta_jn")
 
-    region_restricted = get_search_region(detector, gw, parameters)
-    toys_gw = gw.samples.prepare_toys(
-        "ra",
-        "dec",
-        "luminosity_distance",
-        "theta_jn",
-        nside=parameters.nside,
-        region_restriction=region_restricted,
-    )
-    ntoys_gw = len(toys_gw["ipix"])
-
-    if parameters.apply_det_systematics:
-        ntoys_det = parameters.ntoys_det_systematics
-        toys_det = detector.prepare_toys(ntoys_det)
-    else:
-        ntoys_det = 1
-        toys_det = detector.prepare_toys(0)
     x_arr = np.logspace(*parameters.range_etot)
     post_arr = np.zeros_like(x_arr)
 
-    for idet in range(ntoys_det):
-        for igw in range(ntoys_gw):
-            ipix = toys_gw["ipix"][igw]
-            phi_to_nsig = np.array(
-                [
-                    acc.evaluate(ipix, nside=parameters.nside)
-                    for i, acc in enumerate(acceptances)
-                ]
-            )
-            phi_to_nsig *= toys_det[idet].var_acceptance
-            phi_to_nsig /= 6
-            eiso_to_phi = jang.conversions.eiso_to_phi(
-                parameters.range_energy_integration,
-                parameters.spectrum,
-                toys_gw["luminosity_distance"][igw],
-            )
-            etot_to_eiso = jang.conversions.etot_to_eiso(
-                toys_gw["theta_jn"][igw], parameters.jet
-            )
-            post_arr += poisson_several_samples(
-                toys_det[idet].nobserved,
-                toys_det[idet].nbackground,
-                etot_to_eiso * eiso_to_phi * phi_to_nsig,
-                x_arr,
-            ) * prior_signal(
-                x_arr,
-                toys_det[idet].nbackground,
-                etot_to_eiso * eiso_to_phi * phi_to_nsig,
-                parameters.prior_signal,
-            )
+    for toy in ana.toys:
+        etot_to_nsig = ana.etot_to_nsig(toy)
+        post_arr += poisson_several_samples(
+            toy[1].nobserved, toy[1].nbackground, etot_to_nsig, x_arr,
+        ) * prior_signal(
+            x_arr, toy[1].nbackground, etot_to_nsig, parameters.prior_signal,
+        )
     return x_arr, post_arr
 
 
@@ -229,64 +146,17 @@ def compute_fnu_posterior(
         np.ndarray: array of computed posterior
     """
 
-    acceptances, nside = detector.get_acceptances(parameters.spectrum)
-    if parameters.nside is None:
-        parameters.nside = nside  # pragma: no cover
-    elif parameters.nside != nside:
-        raise RuntimeError(
-            "Something went wrong with map resolutions!"
-        )  # pragma: no cover
+    ana = Analysis(gw=gw, detector=detector, parameters=parameters)
+    ana.add_gw_variables("luminosity_distance", "theta_jn", "radiated_energy")
 
-    region_restricted = get_search_region(detector, gw, parameters)
-    toys_gw = gw.samples.prepare_toys(
-        "ra",
-        "dec",
-        "luminosity_distance",
-        "theta_jn",
-        "radiated_energy",
-        nside=parameters.nside,
-        region_restriction=region_restricted,
-    )
-    ntoys_gw = len(toys_gw["ipix"])
-
-    if parameters.apply_det_systematics:
-        ntoys_det = parameters.ntoys_det_systematics
-        toys_det = detector.prepare_toys(ntoys_det)
-    else:
-        ntoys_det = 1
-        toys_det = detector.prepare_toys(0)
     x_arr = np.logspace(*parameters.range_fnu)
     post_arr = np.zeros_like(x_arr)
 
-    for idet in range(ntoys_det):
-        for igw in range(ntoys_gw):
-            ipix = toys_gw["ipix"][igw]
-            phi_to_nsig = np.array(
-                [
-                    acc.evaluate(ipix, nside=parameters.nside)
-                    for i, acc in enumerate(acceptances)
-                ]
-            )
-            phi_to_nsig *= toys_det[idet].var_acceptance
-            phi_to_nsig /= 6
-            eiso_to_phi = jang.conversions.eiso_to_phi(
-                parameters.range_energy_integration,
-                parameters.spectrum,
-                toys_gw["luminosity_distance"][igw],
-            )
-            etot_to_eiso = jang.conversions.etot_to_eiso(
-                toys_gw["theta_jn"][igw], parameters.jet
-            )
-            fnu_to_etot = jang.conversions.fnu_to_etot(toys_gw["radiated_energy"][igw])
-            post_arr += poisson_several_samples(
-                toys_det[idet].nobserved,
-                toys_det[idet].nbackground,
-                fnu_to_etot * etot_to_eiso * eiso_to_phi * phi_to_nsig,
-                x_arr,
-            ) * prior_signal(
-                x_arr,
-                toys_det[idet].nbackground,
-                fnu_to_etot * etot_to_eiso * eiso_to_phi * phi_to_nsig,
-                parameters.prior_signal,
-            )
+    for toy in ana.toys:
+        fnu_to_nsig = ana.fnu_to_nsig(toy)
+        post_arr += poisson_several_samples(
+            toy[1].nobserved, toy[1].nbackground, fnu_to_nsig, x_arr,
+        ) * prior_signal(
+            x_arr, toy[1].nbackground, fnu_to_nsig, parameters.prior_signal,
+        )
     return x_arr, post_arr
