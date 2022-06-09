@@ -9,6 +9,7 @@ import jang.conversions
 import jang.gw
 import jang.limits
 import jang.results
+import jang.significance
 import jang.stacking
 from jang.neutrinos import BackgroundFixed, Detector
 from jang.parameters import Parameters
@@ -85,6 +86,8 @@ class TestExamples(unittest.TestCase):
         limit_fnu = jang.limits.get_limit_fnu(
             self.det, self.gw, self.pars, f"{self.tmpdir}/fnu"
         )
+        jang.significance.compute_prob_null_hypothesis(self.det, self.gw, self.pars)
+
         # compute limits (with systematics)
         self.pars.apply_det_systematics = True
         self.pars.ntoys_det_systematics = 10
@@ -97,6 +100,7 @@ class TestExamples(unittest.TestCase):
         limit_fnu = jang.limits.get_limit_fnu(
             self.det, self.gw, self.pars, f"{self.tmpdir}/fnu"
         )
+        jang.significance.compute_prob_null_hypothesis(self.det, self.gw, self.pars)
 
         # save in database
         database_res = jang.results.Database(self.db_file)
