@@ -7,7 +7,8 @@ import unittest
 import jang.conversions
 import jang.gw
 import jang.parameters
-import jang.posteriors
+import jang.stats
+import jang.stats.priors
 
 
 class TestJetModels(unittest.TestCase):
@@ -127,16 +128,16 @@ class TestParameters(unittest.TestCase):
 
 class TestStatTools(unittest.TestCase):
     def test_lkl(self):
-        jang.posteriors.compute_upperlimit_from_x_y(np.zeros(10), np.zeros(10))
+        jang.stats.compute_upperlimit_from_x_y(np.zeros(10), np.zeros(10))
         self.assertEqual(
-            jang.posteriors.compute_upperlimit_from_x_y(np.arange(10), np.arange(10)),
+            jang.stats.compute_upperlimit_from_x_y(np.arange(10), np.arange(10)),
             np.inf,
         )
-        jang.posteriors.normalize(np.zeros(10), np.zeros(10))
+        jang.stats.normalize(np.zeros(10), np.zeros(10))
 
     def test_priors(self):
         var, bkg, conv = np.arange(100), np.ones(10), np.ones(10)
-        jang.posteriors.prior_signal(var, bkg, conv, "flat")
-        jang.posteriors.prior_signal(var, bkg, conv, "jeffrey")
+        jang.stats.priors.signal_parameter(var, bkg, conv, "flat")
+        jang.stats.priors.signal_parameter(var, bkg, conv, "jeffrey")
         with self.assertRaises(RuntimeError):
-            jang.posteriors.prior_signal(var, bkg, conv, "missing")
+            jang.stats.priors.signal_parameter(var, bkg, conv, "missing")

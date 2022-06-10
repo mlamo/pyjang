@@ -10,7 +10,8 @@ from typing import Optional, Union
 from jang.gw import GW
 from jang.neutrinos import DetectorBase
 from jang.parameters import Parameters
-import jang.posteriors
+import jang.stats
+import jang.stats.posteriors
 
 matplotlib.use("Agg")
 
@@ -37,9 +38,9 @@ def get_limit_flux(
 ) -> float:
     """Return 90% upper limit on flux normalization (dn/dE = norm*{parameters.spectrum}).
     The related likelihood will be saved in "{saved_lkl}.[npy/png]" if provided."""
-    x, y = jang.posteriors.compute_flux_posterior(detector, gw, parameters)
-    x, y = jang.posteriors.normalize(x, y)
-    limit = jang.posteriors.compute_upperlimit_from_x_y(x, y)
+    x, y = jang.stats.posteriors.compute_flux_posterior(detector, gw, parameters)
+    x, y = jang.stats.normalize(x, y)
+    limit = jang.stats.compute_upperlimit_from_x_y(x, y)
     if saved_lkl is not None:
         os.makedirs(os.path.dirname(saved_lkl), exist_ok=True)
         np.save(saved_lkl + ".npy", [x, y])
@@ -62,9 +63,9 @@ def get_limit_etot(
 ) -> float:
     """Return 90% upper limit on the total energy emitted in neutrinos (all-flavours) E(tot) [in erg].
     The related likelihood will be saved in "{saved_lkl}.[npy/png]" if provided."""
-    x, y = jang.posteriors.compute_etot_posterior(detector, gw, parameters)
-    x, y = jang.posteriors.normalize(x, y)
-    limit = jang.posteriors.compute_upperlimit_from_x_y(x, y)
+    x, y = jang.stats.posteriors.compute_etot_posterior(detector, gw, parameters)
+    x, y = jang.stats.normalize(x, y)
+    limit = jang.stats.compute_upperlimit_from_x_y(x, y)
     if saved_lkl is not None:
         os.makedirs(os.path.dirname(saved_lkl), exist_ok=True)
         np.save(saved_lkl + ".npy", [x, y])
@@ -88,9 +89,9 @@ def get_limit_fnu(
 ) -> float:
     """Return 90% upper limit on fnu=E(tot)/E(radiated).
     The related likelihood will be saved in "{saved_lkl}.[npy/png]" if provided."""
-    x, y = jang.posteriors.compute_fnu_posterior(detector, gw, parameters)
-    x, y = jang.posteriors.normalize(x, y)
-    limit = jang.posteriors.compute_upperlimit_from_x_y(x, y)
+    x, y = jang.stats.posteriors.compute_fnu_posterior(detector, gw, parameters)
+    x, y = jang.stats.normalize(x, y)
+    limit = jang.stats.compute_upperlimit_from_x_y(x, y)
     if saved_lkl is not None:
         os.makedirs(os.path.dirname(saved_lkl), exist_ok=True)
         np.save(saved_lkl + ".npy", [x, y])

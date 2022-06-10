@@ -1,24 +1,27 @@
 """Defining the neutrino detectors and all related objects (samples, acceptances...)."""
 
 import abc
-import astropy
-import astropy.coordinates
-from astropy.units import Quantity, Unit, rad
-from collections.abc import Iterable
 import copy
-import healpy as hp
 import itertools
 import logging
+import os
+import warnings
+from collections.abc import Iterable
+from typing import List, Optional, Tuple, Union
+
+import astropy
+import astropy.coordinates
+import healpy as hp
 import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
-import os
 import scipy.integrate
-from scipy.linalg import block_diag
-from scipy.stats import multivariate_normal, truncnorm, gamma
-from typing import List, Optional, Tuple, Union
-import warnings
 import yaml
+from astropy.units import Quantity, Unit, rad
+from scipy.linalg import block_diag
+from scipy.stats import gamma, multivariate_normal, truncnorm
+
+import jang.stats.pdfs as pdf
 
 matplotlib.use("Agg")
 warnings.filterwarnings("ignore", category=scipy.integrate.IntegrationWarning)
@@ -175,6 +178,17 @@ class BackgroundPoisson(Background):
         return f"{self.nominal:.2e} = {self.Noff:d}/{self.nregions:d}"
 
 
+class Event:
+    def __init__(self, dt: float, ra: float, dec: float, energy: float):
+        self.dt = dt
+        self.ra = ra
+        self.dec = dec
+        self.energy = energy
+
+
+EventsList = List[Event]
+
+
 class Sample:
     """Class to handle the detector samples."""
 
@@ -184,6 +198,8 @@ class Sample:
         self.shortname = shortname if shortname is not None else name
         self.energy_range = (None, None)
         self.nobserved, self.background = None, None
+        self.events = None
+        self.pdfs = {}
 
     def set_energy_range(self, emin: float, emax: float):
         self.energy_range = (emin, emax)
@@ -191,6 +207,13 @@ class Sample:
     def set_observations(self, nobserved: int, bkg: Background):
         self.nobserved = nobserved
         self.background = bkg
+
+    def set_events(self, events: EventsList):
+        self.events = events
+        
+    def set_pdfs(self, sig_ang: pdf.AngularSignal, sig_ene: pdf.EnergySignal, bkg_ang: pdf.AngularBackground, bkg_ene: pdf.EnergyBackground):
+        self.pdfs["signal"] = {"ang": sig_ang, "ene": sig_ene}
+        self.pdfs["background"] = {"ang": bkg_ang, "ene": bkg_ene}
 
     @property
     def log_energy_range(self) -> Tuple[float, float]:

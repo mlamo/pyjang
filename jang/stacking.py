@@ -47,12 +47,10 @@ def stack_events_listgw(
     if len(triggers) != len(list_gw):
         log.error("Some wanted GWs have not been found.")
     lkl_etot = np.exp(loglkl_etot - loglkl_etot[0])
-    # etot_arr, lkl_etot = jang.posteriors.normalize(etot_arr, lkl_etot)
-    limit_etot = jang.posteriors.compute_upperlimit_from_x_y(etot_arr, lkl_etot)
+    limit_etot = jang.stats.compute_upperlimit_from_x_y(etot_arr, lkl_etot)
 
     lkl_fnu = np.exp(loglkl_fnu - loglkl_fnu[0])
-    # fnu_arr, lkl_fnu = jang.posteriors.normalize(fnu_arr, lkl_fnu)
-    limit_fnu = jang.posteriors.compute_upperlimit_from_x_y(fnu_arr, lkl_fnu)
+    limit_fnu = jang.stats.compute_upperlimit_from_x_y(fnu_arr, lkl_fnu)
 
     return len(triggers), limit_etot, limit_fnu
 
@@ -101,9 +99,9 @@ def stack_events_weightedevents(
                 sumloglkl_fnu += loglkl_fnu[gw]
             ngws += 1
         lkl_etot = np.exp(sumloglkl_etot - sumloglkl_etot[0])
-        limit_etot = jang.posteriors.compute_upperlimit_from_x_y(etot_arr, lkl_etot)
+        limit_etot = jang.stats.compute_upperlimit_from_x_y(etot_arr, lkl_etot)
         lkl_fnu = np.exp(sumloglkl_fnu - sumloglkl_fnu[0])
-        limit_fnu = jang.posteriors.compute_upperlimit_from_x_y(fnu_arr, lkl_fnu)
+        limit_fnu = jang.stats.compute_upperlimit_from_x_y(fnu_arr, lkl_fnu)
         results.append([ngws, limit_etot, limit_fnu])
     results = np.array(results)
 
