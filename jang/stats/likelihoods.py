@@ -1,11 +1,12 @@
 import numpy as np
-from scipy.special import factorial
+from scipy.special import gammaln
 
 
 def poisson_one_sample(nobserved: int, nbackground: float, conv: float, var: np.ndarray) -> np.ndarray:
     """Compute the likelihood Poisson(n_observed, n_background + conv * var) as a function of var."""
     nexpected = conv * var + nbackground
-    return np.power(nexpected, nobserved) / factorial(nobserved) * np.exp(-nexpected)
+    loglkl = -nexpected + nobserved * np.log(nexpected) - gammaln(nobserved + 1)
+    return np.exp(loglkl)
 
 
 def poisson_several_samples(nobserved: np.ndarray, nbackground: np.ndarray, conv: np.ndarray, var: np.ndarray) -> np.ndarray:
