@@ -72,7 +72,7 @@ def single_event(
     effarea_sk = [
         EffectiveAreaSK(filename=det_results["effarea"], sample=s) for s in sk.samples
     ]
-    gw = database_gw.find_gw(gwname)
+    gw = database_gw.find_gw(gwname, pars)
 
     accs = [
         effarea.to_acceptance(sk, pars.nside, gw.jd, pars.spectrum)

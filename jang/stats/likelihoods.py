@@ -5,7 +5,7 @@ from scipy.special import gammaln
 def poisson_one_sample(nobserved: int, nbackground: float, conv: float, var: np.ndarray) -> np.ndarray:
     """Compute the likelihood Poisson(n_observed, n_background + conv * var) as a function of var."""
     nexpected = conv * var + nbackground
-    loglkl = -nexpected + nobserved * np.log(nexpected) - gammaln(nobserved + 1)
+    loglkl = np.where(nexpected > 0, - nexpected + nobserved * np.log(nexpected) - gammaln(nobserved + 1), -np.inf)
     return np.exp(loglkl)
 
 

@@ -15,22 +15,6 @@ import jang.conversions
 import jang.neutrinos
 import jang.parameters
 
-priorities = [
-    "PublicationSamples",
-    "C01:IMRPhenomXPHM",
-    "IMRPhenomXPHM",
-    "C01:IMRPhenomPv3HM",
-    "IMRPhenomPv3HM",
-    "C01:IMRPhenomPv2",
-    "IMRPhenomPv2",
-    "C01:IMRPhenomNSBH:HighSpin",
-    "IMRPhenomNSBH:HighSpin",
-    "C01:IMRPhenomNSBH:LowSpin",
-    "IMRPhenomNSBH:LowSpin",
-    "C01:Mixed",
-    "Mixed",
-]
-
 
 class ToyGW:
     def __init__(self, dic: dict):
@@ -41,6 +25,7 @@ class ToyGW:
 class GW:
     def __init__(
         self,
+        pars: jang.parameters.Parameters,
         name: str = None,
         path_to_fits: str = None,
         path_to_samples: str = None,
@@ -55,6 +40,7 @@ class GW:
             self.set_fits(path_to_fits)
         if path_to_samples is not None:
             self.set_samples(path_to_samples)
+        self.set_parameters(pars)
 
     def set_fits(self, file: str):
         """Set GWFits object."""
@@ -71,6 +57,10 @@ class GW:
         logging.getLogger(self.logger).info(
             "[GW] Samples are loaded from the file %s", os.path.basename(file)
         )
+
+    def set_parameters(self, pars: jang.parameters.Parameters):
+        """Define the parameters and propagate to sub-objects."""
+        self.samples.priorities = pars.gw_posteriorsamples_priorities
 
 
 class GWFits:
@@ -117,6 +107,7 @@ class GWSamples:
         self.sample_name = None
         self.mass1 = None
         self.mass2 = None
+        self.priorities = None
 
     def find_correct_sample(self) -> str:
         """Find the correct posterior samples, take the first available one
@@ -124,7 +115,7 @@ class GWSamples:
         """
         f = h5py.File(self.file, "r")
         keys = list(f.keys())
-        for sample in priorities:
+        for sample in self.priorities:
             if sample in keys:
                 # check that radiated_energy is there
                 if (
@@ -153,7 +144,8 @@ class GWSamples:
         for var in variables:
             if var not in variables_h5:
                 if (var + "_non_evolved") in variables_h5:  # pragma: no cover
-                    variables_corrected.append(var + "_non_evolved")  # pragma: no cover
+                    variables_corrected.append(
+                        var + "_non_evolved")  # pragma: no cover
                 else:  # pragma: no cover
                     raise RuntimeError(
                         f"Missing variable {var} in h5 file."
@@ -208,7 +200,8 @@ class GWSamples:
                 toys[k] = toys[k][to_keep]
 
         ntoys = len(toys["ipix"])
-        toys = [ToyGW({k: v[i] for k, v in toys.items()}) for i in range(ntoys)]
+        toys = [ToyGW({k: v[i] for k, v in toys.items()})
+                for i in range(ntoys)]
         return toys
 
 
@@ -246,10 +239,12 @@ class Database:
         else:
             self.db = pd.concat([self.db, newline])
 
-    def find_gw(self, name: str):
+    def find_gw(self, name: str, pars: jang.parameters.Parameters):
         if name not in self.db.index:
-            raise RuntimeError("[gw.Database] Missing index %s in the database." % name)
+            raise RuntimeError(
+                "[gw.Database] Missing index %s in the database." % name)
         gw = GW(
+            pars,
             name,
             path_to_samples=self.db.loc[name]["h5_filepath"],
             path_to_fits=self.db.loc[name]["fits_filepath"],

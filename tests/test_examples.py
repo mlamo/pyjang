@@ -68,7 +68,7 @@ class TestExamples(unittest.TestCase):
         self.pars.set_models("x**-2", jang.conversions.JetIsotropic())
         # GW database
         database_gw = jang.gw.Database(self.gwdb_file)
-        self.gw = database_gw.find_gw("GW190412")
+        self.gw = database_gw.find_gw("GW190412", self.pars)
         # detector
         self.det = Detector(self.det_file)
         self.det.set_acceptances(self.accs, self.pars.spectrum, self.pars.nside)

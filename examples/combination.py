@@ -39,7 +39,7 @@ def single_event(
     ant_sk.add_detector(antares)
     ant_sk.add_detector(sk)
 
-    gw = database_gw.find_gw(gwname)
+    gw = database_gw.find_gw(gwname, pars)
 
     antares.set_acceptances(ant_results["acceptances"], pars.spectrum, pars.nside)
     bkg_ant = [BackgroundFixed(b) for b in ant_results["nbkg"]]

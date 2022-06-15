@@ -10,3 +10,6 @@ range:
   log10_etot: [48, 62, 1400]
   log10_fnu: [-5, 10, 1500]
   neutrino_energy_GeV: [5, 1e8]
+
+# gw:
+#   sample_priorities: []

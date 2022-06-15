@@ -24,13 +24,33 @@ class Parameters:
             self.apply_det_systematics = params["analysis"]["apply_det_systematics"]
             self.ntoys_det_systematics = params["analysis"]["ntoys_det_systematics"]
             self.search_region = params["analysis"]["search_region"]
-            self.range_flux = np.array(params["range"]["log10_flux"], dtype=int)
-            self.range_etot = np.array(params["range"]["log10_etot"], dtype=int)
+            self.range_flux = np.array(
+                params["range"]["log10_flux"], dtype=int)
+            self.range_etot = np.array(
+                params["range"]["log10_etot"], dtype=int)
             self.range_fnu = np.array(params["range"]["log10_fnu"], dtype=int)
             self.range_energy_integration = np.array(
                 params["range"]["neutrino_energy_GeV"], dtype=float
             )
             self.prior_signal = params["analysis"]["prior_signal"]
+            if "gw" in params and "sample_priorities" in params["gw"]:
+                self.gw_posteriorsamples_priorities = params["gw"]["sample_priorities"]
+            else:
+                self.gw_posteriorsamples_priorities = [
+                    "PublicationSamples",
+                    "C01:IMRPhenomXPHM",
+                    "IMRPhenomXPHM",
+                    "C01:IMRPhenomPv3HM",
+                    "IMRPhenomPv3HM",
+                    "C01:IMRPhenomPv2",
+                    "IMRPhenomPv2",
+                    "C01:IMRPhenomNSBH:HighSpin",
+                    "IMRPhenomNSBH:HighSpin",
+                    "C01:IMRPhenomNSBH:LowSpin",
+                    "IMRPhenomNSBH:LowSpin",
+                    "C01:Mixed",
+                    "Mixed",
+                ]
 
     def set_models(
         self, spectrum: Optional[str] = None, jet: Optional[JetModelBase] = None

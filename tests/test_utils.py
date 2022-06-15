@@ -59,10 +59,29 @@ class TestConversions(unittest.TestCase):
 
 class TestGW(unittest.TestCase):
     def setUp(self):
+        self.tmpdir = tempfile.mkdtemp()
+        config_str = """
+            analysis:
+              nside: 8
+              apply_det_systematics: 0
+              ntoys_det_systematics: 0
+              search_region: region_90_excludezero
+              prior_signal: flat
+
+            range:
+              log10_flux: [-5, 5, 1000]
+              log10_etot: [48, 62, 1400]
+              log10_fnu: [-5, 10, 1500]
+              neutrino_energy_GeV: [0.1, 1e8]
+        """
+        self.config_file = f"{self.tmpdir}/config.yaml"
+        with open(self.config_file, "w") as f:
+            f.write(config_str)
+        self.pars = jang.parameters.Parameters(self.config_file)
         self.dbgw = jang.gw.Database(
             "examples/input_files/gw_catalogs/database_example.csv"
         )
-        self.gw = self.dbgw.find_gw("GW190412")
+        self.gw = self.dbgw.find_gw("GW190412", self.pars)
         self.tmpdir = tempfile.mkdtemp()
 
     def test_skymap(self):
@@ -80,7 +99,7 @@ class TestGW(unittest.TestCase):
         emptydb.save()
         #
         with self.assertRaises(RuntimeError):
-            self.dbgw.find_gw("missing_ev")
+            self.dbgw.find_gw("missing_ev", self.pars)
         self.dbgw.list_all()
         self.dbgw.list("BBH", 0, 1000)
         self.dbgw.list("BNS", 1000, 0)

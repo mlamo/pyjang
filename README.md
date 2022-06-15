@@ -15,6 +15,21 @@ Installation
 Usage
 ===================================================
 
+* Parameters:
+   * create/use a YAML file with all needed parameters (example: ``examples/parameter_files/config_for_antares.yaml``)
+   * load the parameters:
+   ```python
+   from jang.parameters import Parameters
+   pars = Parameters("examples/parameter_files/path_to_yaml_file")
+   ```
+
+   * select the neutrino spectrum and jet model:
+   ```python
+   pars.set_models("x**-2", jang.conversions.JetIsotropic())
+   ```
+
+   (list of available jet models in ``jang/conversions.py``)
+
 * Detector information:
    * create/use a YAML file with all relevant information (example in ``examples/input_files/DETECTORNAME/detector.yaml``)
    * create a new detector object:
@@ -47,23 +62,8 @@ Usage
 
    * An event can be extracted from it:
    ```python
-   gw = database_gw.find_gw(name_of_gw)
+   gw = database_gw.find_gw(name_of_gw, pars)
    ```
-
-* Parameters:
-   * create/use a YAML file with all needed parameters (example: ``examples/parameter_files/config_for_antares.yaml``)
-   * load the parameters:
-   ```python
-   from jang.parameters import Parameters
-   pars = Parameters("examples/parameter_files/path_to_yaml_file")
-   ```
-
-   * select the neutrino spectrum and jet model:
-   ```python
-   pars.set_models("x**-2", jang.conversions.JetIsotropic())
-   ```
-
-   (list of available jet models in ``jang/conversions.py``)
 
 * Compute limits:
    * limit on the incoming neutrino flux (where the last optional argument is the local path -without extension- where the posterior could be saved in npy format):

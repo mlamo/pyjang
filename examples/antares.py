@@ -35,7 +35,7 @@ def single_event(
     database_res = jang.results.Database(dbfile)
 
     antares = Detector("examples/input_files/detector_antares.yaml")
-    gw = database_gw.find_gw(gwname)
+    gw = database_gw.find_gw(gwname, pars)
 
     antares.set_acceptances(det_results["acceptances"], pars.spectrum, pars.nside)
     bkg = [BackgroundGaussian(b, 0.20 * b) for b in det_results["nbkg"]]
@@ -75,8 +75,8 @@ if __name__ == "__main__":
     gwdb = "examples/input_files/gw_catalogs/database_example.csv"
     npix = hp.nside2npix(8)
     detresults = {
-        "nobs": [2, 0, 0, 0],
-        "nbkg": [0.5, 0, 0.3, 0],
-        "acceptances": [np.ones(npix), np.zeros(npix), np.ones(npix), np.zeros(npix),],
+        "nobs": [1, 0, 0, 0],
+        "nbkg": [0.5, 0., 0.3, 0.],
+        "acceptances": [np.ones(npix), np.zeros(npix), np.ones(npix), np.zeros(npix), ],
     }
     single_event("GW190412", gwdb, detresults, parameters)
