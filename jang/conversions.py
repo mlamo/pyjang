@@ -10,6 +10,7 @@ from typing import List
 Mpc_to_cm = 3.0856776e24
 erg_to_GeV = 624.15
 solarmass_to_erg = 1.787e54
+second_to_day = 1/86400
 
 
 class JetModelBase(metaclass=abc.ABCMeta):
@@ -141,3 +142,8 @@ def utc_to_jd(dtime: datetime.datetime) -> float:
     """Convert from UTC time (datetime format) to julian date."""
     t = astropy.time.Time(dtime, format="datetime")
     return t.jd
+
+
+def jd_to_mjd(jd: float) -> float:
+    """Convert Julian Date to Modified Julian Date."""
+    return jd - 2400000.5

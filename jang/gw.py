@@ -50,6 +50,7 @@ class GW:
         )
         self.utc = self.fits.utc
         self.jd = self.fits.jd
+        self.mjd = self.fits.mjd
 
     def set_samples(self, file: str):
         """Set GWSamples object."""
@@ -70,6 +71,7 @@ class GWFits:
         header = fits.read_sky_map(self.file, nest=False)[1]
         self.utc = astropy.time.Time(header["gps_time"], format="gps").utc
         self.jd = jang.conversions.utc_to_jd(self.utc)
+        self.mjd = jang.conversions.jd_to_mjd(self.jd)
 
     def get_skymap(self, nside: int = None) -> np.ndarray:
         """Get the skymap from FITS file."""
@@ -78,6 +80,12 @@ class GWFits:
             skymap = hp.pixelfunc.ud_grade(skymap, nside)
             skymap *= 1 / np.sum(skymap)
         return skymap
+
+    def get_ra_dec_bestfit(self, nside: int):
+        """Get the direction with the maximum probability for given nside."""
+        map = self.get_skymap(nside)
+        tmax, pmax = hp.pix2ang(nside, np.argmax(map))
+        return pmax, np.pi/2 - tmax
 
     def get_signal_region(
         self, nside: int = None, contained_prob: float = 0.90
