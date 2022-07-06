@@ -102,8 +102,8 @@ class TestGW(unittest.TestCase):
         with self.assertRaises(RuntimeError):
             self.dbgw.find_gw("missing_ev", self.pars)
         self.dbgw.list_all()
-        self.dbgw.list("BBH", 0, 1000)
-        self.dbgw.list("BNS", 1000, 0)
+        self.dbgw.list(self.pars, "BBH", 0, 1000)
+        self.dbgw.list(self.pars, "BNS", 1000, 0)
         self.dbgw.add_entry("ev", "", "")
         self.dbgw.save(f"{self.tmpdir}/db.csv")
 

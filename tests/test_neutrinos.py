@@ -161,7 +161,7 @@ class TestDetector(unittest.TestCase):
 
 
 class MyEffectiveArea(EffectiveAreaBase):
-    def evaluate(self, energy: Union[float, Iterable], altitude: float, azimuth: float):
+    def evaluate(self, energy: Union[float, Iterable]):
         return np.ones_like(energy)
 
 
