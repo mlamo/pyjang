@@ -11,10 +11,7 @@ import jang.stats.likelihoods as lkl
 import jang.stats.priors as prior
 
 
-
-def compute_flux_posterior(
-    detector: Detector, gw: GW, parameters: Parameters
-) -> Tuple[np.ndarray, np.ndarray]:
+def compute_flux_posterior(detector: Detector, gw: GW, parameters: Parameters) -> Tuple[np.ndarray, np.ndarray]:
     """Compute the posterior as a function of all-flavour neutrino flux at Earth.
 
     Args:
@@ -34,17 +31,16 @@ def compute_flux_posterior(
 
     for toy in ana.toys:
         phi_to_nsig = ana.phi_to_nsig(toy)
-        post_arr += lkl.poisson_several_samples(
-            toy[1].nobserved, toy[1].nbackground, phi_to_nsig, x_arr,
-        ) * prior.signal_parameter(
-            x_arr, toy[1].nbackground, phi_to_nsig, parameters.prior_signal,
-        )
+        if parameters.likelihood_method == "poisson":
+            post_arr += lkl.poisson_several_samples(toy[1].nobserved, toy[1].nbackground, phi_to_nsig, x_arr) * \
+                prior.signal_parameter(x_arr, toy[1].nbackground, phi_to_nsig, parameters.prior_signal)
+        elif parameters.likelihood_method == "pointsource":
+            post_arr += lkl.pointsource_several_samples(detector.samples, toy[1].nobserved, toy[1].nbackground, phi_to_nsig, x_arr, toy[0].ra, toy[0].dec) * \
+                prior.signal_parameter(x_arr, toy[1].nbackground, phi_to_nsig, parameters.prior_signal)
     return x_arr, post_arr
 
 
-def compute_etot_posterior(
-    detector: Detector, gw: GW, parameters: Parameters
-) -> Tuple[np.ndarray, np.ndarray]:
+def compute_etot_posterior(detector: Detector, gw: GW, parameters: Parameters) -> Tuple[np.ndarray, np.ndarray]:
     """Compute the posterior as a function of total energy.
 
     Args:
@@ -65,17 +61,16 @@ def compute_etot_posterior(
 
     for toy in ana.toys:
         etot_to_nsig = ana.etot_to_nsig(toy)
-        post_arr += lkl.poisson_several_samples(
-            toy[1].nobserved, toy[1].nbackground, etot_to_nsig, x_arr,
-        ) * prior.signal_parameter(
-            x_arr, toy[1].nbackground, etot_to_nsig, parameters.prior_signal,
-        )
+        if parameters.likelihood_method == "poisson":
+            post_arr += lkl.poisson_several_samples(toy[1].nobserved, toy[1].nbackground, etot_to_nsig, x_arr) * \
+                prior.signal_parameter(x_arr, toy[1].nbackground, etot_to_nsig, parameters.prior_signal)
+        elif parameters.likelihood_method == "pointsource":
+            post_arr += lkl.pointsource_several_samples(detector.samples, toy[1].nobserved, toy[1].nbackground, etot_to_nsig, x_arr, toy[0].ra, toy[0].dec) * \
+                prior.signal_parameter(x_arr, toy[1].nbackground, etot_to_nsig, parameters.prior_signal)
     return x_arr, post_arr
 
 
-def compute_fnu_posterior(
-    detector: Detector, gw: GW, parameters: dict
-) -> Tuple[np.ndarray, np.ndarray]:
+def compute_fnu_posterior(detector: Detector, gw: GW, parameters: dict) -> Tuple[np.ndarray, np.ndarray]:
     """Compute the posterior as a function of fnu=E(tot)/E(radiated).
 
     Args:
@@ -96,9 +91,10 @@ def compute_fnu_posterior(
 
     for toy in ana.toys:
         fnu_to_nsig = ana.fnu_to_nsig(toy)
-        post_arr += lkl.poisson_several_samples(
-            toy[1].nobserved, toy[1].nbackground, fnu_to_nsig, x_arr,
-        ) * prior.signal_parameter(
-            x_arr, toy[1].nbackground, fnu_to_nsig, parameters.prior_signal,
-        )
+        if parameters.likelihood_method == "poisson":
+            post_arr += lkl.poisson_several_samples(toy[1].nobserved, toy[1].nbackground, fnu_to_nsig, x_arr) * \
+                prior.signal_parameter(x_arr, toy[1].nbackground, fnu_to_nsig, parameters.prior_signal)
+        elif parameters.likelihood_method == "pointsource":
+            post_arr += lkl.pointsource_several_samples(detector.samples, toy[1].nobserved, toy[1].nbackground, fnu_to_nsig, x_arr, toy[0].ra, toy[0].dec) * \
+                prior.signal_parameter(x_arr, toy[1].nbackground, fnu_to_nsig, parameters.prior_signal)
     return x_arr, post_arr

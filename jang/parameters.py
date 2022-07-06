@@ -18,21 +18,19 @@ class Parameters:
             self.file = file
             with open(self.file, "r") as f:
                 params = yaml.safe_load(f)
-            self.nside = params["analysis"]["nside"]
-            if self.nside < 0:
-                self.nside = None
+            # analysis parameters
+            self.nside = params["analysis"]["nside"] if params["analysis"]["nside"] > 0 else None
             self.apply_det_systematics = params["analysis"]["apply_det_systematics"]
             self.ntoys_det_systematics = params["analysis"]["ntoys_det_systematics"]
             self.search_region = params["analysis"]["search_region"]
-            self.range_flux = np.array(
-                params["range"]["log10_flux"], dtype=int)
-            self.range_etot = np.array(
-                params["range"]["log10_etot"], dtype=int)
-            self.range_fnu = np.array(params["range"]["log10_fnu"], dtype=int)
-            self.range_energy_integration = np.array(
-                params["range"]["neutrino_energy_GeV"], dtype=float
-            )
+            self.likelihood_method = params["analysis"]["likelihood"]
             self.prior_signal = params["analysis"]["prior_signal"]
+            # flux/energy ranges
+            self.range_flux = np.array(params["range"]["log10_flux"], dtype=int)
+            self.range_etot = np.array(params["range"]["log10_etot"], dtype=int)
+            self.range_fnu = np.array(params["range"]["log10_fnu"], dtype=int)
+            self.range_energy_integration = np.array(params["range"]["neutrino_energy_GeV"], dtype=float)
+            # GW parameters
             if "gw" in params and "sample_priorities" in params["gw"]:
                 self.gw_posteriorsamples_priorities = params["gw"]["sample_priorities"]
             else:

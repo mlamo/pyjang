@@ -66,6 +66,7 @@ class TestGW(unittest.TestCase):
               apply_det_systematics: 0
               ntoys_det_systematics: 0
               search_region: region_90_excludezero
+              likelihood: poisson
               prior_signal: flat
 
             range:
@@ -116,6 +117,7 @@ class TestParameters(unittest.TestCase):
               apply_det_systematics: 0
               ntoys_det_systematics: 0
               search_region: bestfit
+              likelihood: poisson
               prior_signal: flat
 
             range:

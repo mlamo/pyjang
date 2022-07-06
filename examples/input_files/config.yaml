@@ -3,6 +3,7 @@ analysis:
   apply_det_systematics: 0
   ntoys_det_systematics: 0
   search_region: region_90
+  likelihood: poisson  # choices are 'poisson', 'pointsource'
   prior_signal: flat  # choices are 'flat' or 'jeffrey'
 
 range:

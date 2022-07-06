@@ -88,8 +88,11 @@ class Acceptance:
         self.nside = hp.npix2nside(len(self.map))
 
     def change_resolution(self, nside):
-        if self.nside != 0 and self.nside != nside:
-            self.map = hp.pixelfunc.ud_grade(self.map, nside)
+        if self.nside != nside:
+            if self.is_zero():
+                self.map = np.zeros(hp.nside2npix(nside))
+            else:
+                self.map = hp.pixelfunc.ud_grade(self.map, nside)
             self.nside = nside
 
     def evaluate(self, ipix: int, nside: Optional[int] = None):
@@ -179,11 +182,33 @@ class BackgroundPoisson(Background):
 
 
 class Event:
-    def __init__(self, dt: float, ra: float, dec: float, energy: float):
+    def __init__(self, dt: float, ra: float, dec: float, energy: float, sigma: float = np.nan):
+        """Event is defined by:
+            - dt = t(neutrino)-t(GW) [in seconds]
+            - ra/dec = reconstructed equatorial directions [in radians]
+            - energy = reconstructed energy [in GeV]
+            - (optional) sigma = uncertainty on reconstructed direction [in radians]
+        """
         self.dt = dt
         self.ra = ra
         self.dec = dec
         self.energy = energy
+        self.sigma = sigma
+
+    def __repr__(self):
+        r = f"Event(deltaT={self.dt:.0f} s, ra/dec={np.rad2deg(self.ra):.1f}/{np.rad2deg(self.dec):.1f} deg, energy={self.energy:.2g} GeV"
+        if np.isfinite(self.sigma):
+            r += f", sigma={np.rad2deg(self.sigma):.2f} deg"
+        r += ")"
+        return r
+
+    @property
+    def sindec(self):
+        return np.sin(self.dec)
+
+    @property
+    def log10energy(self):
+        return np.log10(self.energy)
 
 
 EventsList = List[Event]
@@ -210,7 +235,7 @@ class Sample:
 
     def set_events(self, events: EventsList):
         self.events = events
-        
+
     def set_pdfs(self, sig_ang: pdf.AngularSignal, sig_ene: pdf.EnergySignal, bkg_ang: pdf.AngularBackground, bkg_ene: pdf.EnergyBackground):
         self.pdfs["signal"] = {"ang": sig_ang, "ene": sig_ene}
         self.pdfs["background"] = {"ang": bkg_ang, "ene": bkg_ene}
@@ -274,7 +299,7 @@ class DetectorBase(abc.ABC):
                 )
             accs.append(sample.acceptances[spectrum])
         nsides = np.array([acc.nside for acc in accs])
-        if not np.all(nsides == nsides[0]):
+        if not np.all((nsides == nsides[0])):
             raise RuntimeError(
                 "All acceptance maps are not in the same resolution. Exiting!"
             )
@@ -477,13 +502,14 @@ class EffectiveAreaBase:
 
     def __init__(self, sample: Sample):
         self.sample = sample
+        self.args_evaluate = []
 
     @abc.abstractmethod
     def read(self):  # pragma: no cover
         pass
 
     @abc.abstractmethod  # pragma: no cover
-    def evaluate(self, energy: Union[float, Iterable], altitude: float, azimuth: float):
+    def evaluate(self, energy: Union[float, Iterable]):
         pass
 
     def to_acceptance(self, detector: Detector, nside: int, jd: float, spectrum: str):
@@ -492,23 +518,32 @@ class EffectiveAreaBase:
         npix = hp.nside2npix(nside)
         acc_map = np.zeros(npix)
         dec, ra = hp.pix2ang(nside, range(npix))
-        dec = np.pi / 2 - dec
-        alt, az = detector.radec_to_altaz(ra * rad, dec * rad, jd)
+        dec, ra = (np.pi / 2 - dec), ra
 
         f_spectrum = eval("lambda x: %s" % spectrum)
+
+        def func(x: float, *args):
+            return self.evaluate(np.exp(x), *args) * f_spectrum(np.exp(x)) * np.exp(x)
+
         for ipix in range(npix):
 
-            def func(x: float, altitude: float, azimuth: float):
-                return (
-                    self.evaluate(np.exp(x), altitude, azimuth)
-                    * f_spectrum(np.exp(x))
-                    * np.exp(x)
-                )
+            if 'altitude' in self.args_evaluate and 'azimuth' in self.args_evaluate:
+                alt, az = detector.radec_to_altaz(ra*rad, dec*rad, jd)
+                arg = (alt[ipix].rad, az[ipix].rad)
+            elif 'altitude' in self.args_evaluate:
+                alt, az = detector.radec_to_altaz(ra*rad, dec*rad, jd)
+                arg = (alt[ipix].rad,)
+            elif 'ra' in self.args_evaluate and 'dec' in self.args_evaluate:
+                arg = (ra[ipix], dec[ipix])
+            elif 'dec' in self.args_evaluate:
+                arg = (dec[ipix],)
+            else:
+                arg = ()
 
             acc_map[ipix], _ = scipy.integrate.quad(
                 func,
                 *(self.sample.log_energy_range),
-                args=(alt[ipix].rad, az[ipix].rad),
+                args=arg,
                 limit=500,
             )
         return np.array(acc_map)
