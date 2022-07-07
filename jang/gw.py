@@ -97,6 +97,8 @@ class GWFits:
 
         if contained_prob is None:
             return np.arange(npix)
+        if contained_prob == 0:  # signal region = only best-fit point
+            return [np.argmax(skymap)]
 
         iSort = np.flipud(np.argsort(skymap))
         sortedCumulProba = np.cumsum(skymap[iSort])
