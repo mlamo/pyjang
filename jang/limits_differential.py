@@ -1,8 +1,10 @@
 import copy
 import matplotlib
 import matplotlib.pyplot as plt
+import numpy as np
 from typing import List, Tuple
 
+from jang import DisableLogger
 from jang.gw import GW
 from jang.limits import get_limit_flux
 from jang.neutrinos import DetectorBase, EffectiveAreaBase
@@ -42,9 +44,13 @@ def get_flux_limits(
 
     newdet = copy.deepcopy(detector)
     for r in results:
+        if np.all(r['acceptance'] == 0):
+            r['limit'] = np.inf
+            continue
         accs = [r['acceptance'] if s.name == r['sample'] else 0 for s in newdet.samples]
         newdet.set_acceptances(accs, parameters.spectrum, parameters.nside)
-        r['limit'] = get_limit_flux(newdet, gw, parameters)
+        with DisableLogger():
+            r['limit'] = get_limit_flux(newdet, gw, parameters)
 
     return results
 
