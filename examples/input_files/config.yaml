@@ -2,7 +2,7 @@ analysis:
   nside: -1  # -1 means that input skymaps will be used as is
   apply_det_systematics: 0
   ntoys_det_systematics: 0
-  search_region: region_90
+  search_region: region_90  # choices are 'fullsky', 'bestfit' or 'region_X' for the X% confidence region
   likelihood: poisson  # choices are 'poisson', 'pointsource'
   prior_signal: flat  # choices are 'flat' or 'jeffrey'
 
