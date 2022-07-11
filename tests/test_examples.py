@@ -8,11 +8,21 @@ import numpy as np
 import jang.conversions
 import jang.gw
 import jang.limits
+import jang.limits_differential
 import jang.results
 import jang.significance
 import jang.stacking
-from jang.neutrinos import BackgroundFixed, Detector
+from jang.neutrinos import BackgroundFixed, Detector, EffectiveAreaBase
 from jang.parameters import Parameters
+
+
+class EffectiveArea(EffectiveAreaBase):
+    def __init__(self, value):
+        super().__init__(None)
+        self.value = value
+
+    def evaluate(self, energy):
+        return self.value * np.ones_like(energy)
 
 
 class TestExamples(unittest.TestCase):
@@ -75,34 +85,40 @@ class TestExamples(unittest.TestCase):
         self.det.set_acceptances(self.accs, self.pars.spectrum, self.pars.nside)
         bkg = [BackgroundFixed(b) for b in [0.1, 0.3]]
         self.det.set_observations([0, 0], bkg)
+        # effective areas
+        self.aeffs = [EffectiveArea(1), EffectiveArea(0)]
 
-    def test_example(self):
-        # compute limits
-        limit_flux = jang.limits.get_limit_flux(
-            self.det, self.gw, self.pars, f"{self.tmpdir}/flux"
-        )
-        limit_etot = jang.limits.get_limit_etot(
-            self.det, self.gw, self.pars, f"{self.tmpdir}/etot"
-        )
-        limit_fnu = jang.limits.get_limit_fnu(
-            self.det, self.gw, self.pars, f"{self.tmpdir}/fnu"
-        )
+    def test_limits_nosyst(self):
+        self.pars.apply_det_systematics = False
+        self.pars.likelihood_method = "pointsource"
+        limit_flux = jang.limits.get_limit_flux(self.det, self.gw, self.pars, f"{self.tmpdir}/flux")
+        limit_etot = jang.limits.get_limit_etot(self.det, self.gw, self.pars, f"{self.tmpdir}/etot")
+        limit_fnu = jang.limits.get_limit_fnu(self.det, self.gw, self.pars, f"{self.tmpdir}/fnu")
         jang.significance.compute_prob_null_hypothesis(self.det, self.gw, self.pars)
 
-        # compute limits (with systematics)
+    def test_limits_wsyst(self):
         self.pars.apply_det_systematics = True
         self.pars.ntoys_det_systematics = 10
-        limit_flux = jang.limits.get_limit_flux(
-            self.det, self.gw, self.pars, f"{self.tmpdir}/flux"
-        )
-        limit_etot = jang.limits.get_limit_etot(
-            self.det, self.gw, self.pars, f"{self.tmpdir}/etot"
-        )
-        limit_fnu = jang.limits.get_limit_fnu(
-            self.det, self.gw, self.pars, f"{self.tmpdir}/fnu"
-        )
+        self.pars.likelihood_method = "poisson"
+        jang.limits.get_limit_flux(self.det, self.gw, self.pars, f"{self.tmpdir}/flux")
+        jang.limits.get_limit_etot(self.det, self.gw, self.pars, f"{self.tmpdir}/etot")
+        jang.limits.get_limit_fnu(self.det, self.gw, self.pars, f"{self.tmpdir}/fnu")
         jang.significance.compute_prob_null_hypothesis(self.det, self.gw, self.pars)
 
+    def test_difflimits(self):
+        self.pars.apply_det_systematics = False
+        self.pars.likelihood_method = "poisson"
+        energy_bins = [(10.**x, 10.**(x+1)) for x in np.arange(-1, 9)]
+        sample_styles = {'sampleA': {'color': 'blue'}, 'sampleB': {'color': 'red'}}
+        diff_limits = jang.limits_differential.get_flux_limits(self.det, self.aeffs, self.gw, self.pars, energy_bins)
+        jang.limits_differential.plot_flux_limits(f"{self.tmpdir}/diff.png", diff_limits, sample_styles)
+
+    def test_db(self):
+        # make fake lkl files for etot and fnu (needed for stacking)
+        x, y = np.logspace(*self.pars.range_etot), np.flipud(np.arange(self.pars.range_etot[-1]))
+        np.save(f"{self.tmpdir}/etot", [x, y])
+        x, y = np.logspace(*self.pars.range_fnu), np.flipud(np.arange(self.pars.range_fnu[-1]))
+        np.save(f"{self.tmpdir}/fnu", [x, y])
         # save in database
         database_res = jang.results.Database(self.db_file)
         database_res.add_entry(

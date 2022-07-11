@@ -88,7 +88,7 @@ class GWFits:
         return pmax, np.pi/2 - tmax
 
     def get_signal_region(
-        self, nside: int = None, contained_prob: float = 0.90
+        self, nside: int, contained_prob: float = 0.90
     ) -> np.ndarray:
         """Get the region containing a given probability of the skymap, for a given resolution."""
         skymap = self.get_skymap(nside)

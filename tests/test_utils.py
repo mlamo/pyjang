@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+import healpy as hp
 import numpy as np
 import tempfile
 import unittest
@@ -86,8 +87,9 @@ class TestGW(unittest.TestCase):
         self.tmpdir = tempfile.mkdtemp()
 
     def test_skymap(self):
-        self.gw.fits.get_signal_region(None, None)
-        self.gw.fits.get_signal_region(16, 0.90)
+        self.assertTrue(np.all(self.gw.fits.get_signal_region(8, None) == np.arange(hp.nside2npix(8))))
+        self.assertTrue(np.all(self.gw.fits.get_signal_region(8, 0.90) == [163, 131, 164]))
+        self.assertTrue(np.all(np.isclose(self.gw.fits.get_ra_dec_bestfit(8), (3.730641276137879, 0.6228265854120028))))
 
     def test_database(self):
         emptydb = jang.gw.Database()
