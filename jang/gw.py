@@ -102,11 +102,8 @@ class GWFits:
 
         iSort = np.flipud(np.argsort(skymap))
         sortedCumulProba = np.cumsum(skymap[iSort])
-        cumulProba = np.empty_like(sortedCumulProba)
-        cumulProba[iSort] = sortedCumulProba
-
-        pixReg = np.arange(npix)
-        pixReg = pixReg[cumulProba <= contained_prob]
+        iSortMax = np.argwhere(sortedCumulProba > contained_prob)[0][0]
+        pixReg = iSort[:iSortMax+1]
         return pixReg
 
 
