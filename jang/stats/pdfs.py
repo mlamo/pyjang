@@ -46,9 +46,9 @@ class VonMisesSignal(AngularSignal):
         dpsi = angular_distance(evt.ra, evt.dec, ra_src, dec_src)
         if evt.sigma > np.radians(7):
             kappa = 1. / evt.sigma**2
-            return kappa * np.exp(kappa * np.cos(dpsi)) / np.sinh(kappa)
+            return kappa * np.exp(kappa * np.cos(dpsi)) / (4*np.pi * np.sinh(kappa))
         else:
-            return 2 / evt.sigma**2 * np.exp(-0.5 * (dpsi/evt.sigma)**2)
+            return 0.5 / np.pi / evt.sigma**2 * np.exp(-0.5 * (dpsi/evt.sigma)**2)
 
 
 class EnergyBackground(PDF):
