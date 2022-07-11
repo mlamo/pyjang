@@ -79,6 +79,10 @@ class Acceptance:
             self.map = 0
             self.nside = 0
 
+    def __call__(self, ra: float, dec: float):
+        ipix = hp.ang2pix(self.nside, np.pi/2 - dec, ra)
+        return self.evaluate(ipix)
+
     def is_zero(self):
         return self.nside == 0
 
