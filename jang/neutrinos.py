@@ -233,6 +233,13 @@ class Sample:
     def set_energy_range(self, emin: float, emax: float):
         self.energy_range = (emin, emax)
 
+    def set_acceptance(self, acceptance: Union[np.ndarray, float], spectrum: str, nside: Optional[int] = None):
+        acc = Acceptance(acceptance)
+        if nside is not None:
+            acc.change_resolution(nside)
+        assert isinstance(spectrum, str)
+        self.acceptances[spectrum] = acc
+
     def set_observations(self, nobserved: int, bkg: Background):
         self.nobserved = nobserved
         self.background = bkg
@@ -241,6 +248,10 @@ class Sample:
         self.events = events
 
     def set_pdfs(self, sig_ang: pdf.AngularSignal, sig_ene: pdf.EnergySignal, bkg_ang: pdf.AngularBackground, bkg_ene: pdf.EnergyBackground):
+        if (sig_ang is None) ^ (bkg_ang is None):
+            raise RuntimeError("One of the angular PDFs is missing!")
+        if (sig_ene is None) ^ (bkg_ene is None):
+            raise RuntimeError("One of the enangularergy PDFs is missing!")
         self.pdfs["signal"] = {"ang": sig_ang, "ene": sig_ene}
         self.pdfs["background"] = {"ang": bkg_ang, "ene": bkg_ene}
 
@@ -251,11 +262,6 @@ class Sample:
     @property
     def log10_energy_range(self) -> Tuple[float, float]:
         return np.log10(self.energy_range[0]), np.log10(self.energy_range[1])
-
-    def add_acceptance(self, spectrum: str, acc: Acceptance):
-        assert isinstance(spectrum, str)
-        assert isinstance(acc, Acceptance)
-        self.acceptances[spectrum] = copy.copy(acc)
 
 
 class ToyResult:
@@ -410,28 +416,17 @@ class Detector(DetectorBase):
 
     def set_observations(self, nobserved: list, background: list):
         if len(nobserved) != self.nsamples:
-            raise RuntimeError(
-                "[Detector] Incorrect size for nobserved as compared to the number of samples."
-            )
+            raise RuntimeError("[Detector] Incorrect size for nobserved as compared to the number of samples.")
         if len(background) != self.nsamples:
-            raise RuntimeError(
-                "[Detector] Incorrect size for nbackground as compared to the number of samples."
-            )
+            raise RuntimeError("[Detector] Incorrect size for nbackground as compared to the number of samples.")
         for i, smp in enumerate(self.samples):
             smp.set_observations(nobserved[i], background[i])
 
-    def set_acceptances(
-        self, acceptances: list, spectrum: str, nside: Optional[int] = None
-    ):
+    def set_acceptances(self, acceptances: list, spectrum: str, nside: Optional[int] = None):
         if len(acceptances) != self.nsamples:
-            raise RuntimeError(
-                "[Detector] The number of acceptance maps does not match the number of samples."
-            )
-        for map, sample in zip(acceptances, self.samples):
-            acc = Acceptance(map)
-            if nside is not None:
-                acc.change_resolution(nside)
-            sample.add_acceptance(spectrum, acc)
+            raise RuntimeError("[Detector] Incorrect number of acceptances as compared to the number of samples.")
+        for acceptance, sample in zip(acceptances, self.samples):
+            sample.set_acceptance(acceptance, spectrum, nside)
 
     # converters
 

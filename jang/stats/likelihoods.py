@@ -37,6 +37,8 @@ def logpointsource_one_sample(sample: Sample, nobserved: int, nbackground: float
                 ll *= sample.pdfs[n]["ang"](evt, ra_src, dec_src) if n == "signal" else sample.pdfs[n]["ang"](evt)
             if sample.pdfs[n]["ene"] is not None:
                 ll *= sample.pdfs[n]["ene"](evt)
+            if sample.pdfs[n]["time"] is not None:
+                ll *= sample.pdfs[n]["time"](evt)
             l += ll
         loglkl += np.log(l)
 
