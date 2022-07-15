@@ -72,6 +72,7 @@ class GWFits:
         self.utc = astropy.time.Time(header["gps_time"], format="gps").utc
         self.jd = jang.conversions.utc_to_jd(self.utc)
         self.mjd = jang.conversions.jd_to_mjd(self.jd)
+        self.unix = astropy.time.Time(header["gps_time"], format="gps").unix
 
     def get_skymap(self, nside: int = None) -> np.ndarray:
         """Get the skymap from FITS file."""
