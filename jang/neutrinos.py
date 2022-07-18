@@ -186,29 +186,34 @@ class BackgroundPoisson(Background):
 
 
 class Event:
-    def __init__(self, dt: float, ra: float, dec: float, energy: float, sigma: float = np.nan):
+    def __init__(self, dt: float = np.nan, ra: float = np.nan, dec: float = np.nan, energy: float = np.nan, sigma: float = np.nan, altitude: float = np.nan, azimuth: float = np.nan):
         """Event is defined by:
             - dt = t(neutrino)-t(GW) [in seconds]
             - ra/dec = reconstructed equatorial directions [in radians]
             - energy = reconstructed energy [in GeV]
-            - (optional) sigma = uncertainty on reconstructed direction [in radians]
+            - sigma = uncertainty on reconstructed direction [in radians]
+            - altitude/azimuth = reconstructed local directions [in radians]
         """
         self.dt = dt
         self.ra = ra
         self.dec = dec
         self.energy = energy
         self.sigma = sigma
+        self.altitude = altitude
+        self.azimuth = azimuth
 
     def __repr__(self):
-        r = f"Event(deltaT={self.dt:.0f} s, ra/dec={np.rad2deg(self.ra):.1f}/{np.rad2deg(self.dec):.1f} deg, energy={self.energy:.2g} GeV"
-        if np.isfinite(self.sigma):
-            r += f", sigma={np.rad2deg(self.sigma):.2f} deg"
-        r += ")"
+        r = f"Event(deltaT={self.dt:.0f} s, ra/dec={np.rad2deg(self.ra):.1f}/{np.rad2deg(self.dec):.1f} deg, energy={self.energy:.2g} GeV, "
+        r += f"sigma={np.rad2deg(self.sigma):.2f} deg, alt/azi={np.rad2deg(self.altitude):.1f}/{np.rad2deg(self.azimuth):.1f} deg)"
         return r
 
     @property
     def sindec(self):
         return np.sin(self.dec)
+
+    @property
+    def sinalt(self):
+        return np.sin(self.altitude)
 
     @property
     def log10energy(self):
