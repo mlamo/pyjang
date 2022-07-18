@@ -91,9 +91,9 @@ class TestExamples(unittest.TestCase):
     def test_limits_nosyst(self):
         self.pars.apply_det_systematics = False
         self.pars.likelihood_method = "pointsource"
-        limit_flux = jang.limits.get_limit_flux(self.det, self.gw, self.pars, f"{self.tmpdir}/flux")
-        limit_etot = jang.limits.get_limit_etot(self.det, self.gw, self.pars, f"{self.tmpdir}/etot")
-        limit_fnu = jang.limits.get_limit_fnu(self.det, self.gw, self.pars, f"{self.tmpdir}/fnu")
+        jang.limits.get_limit_flux(self.det, self.gw, self.pars, f"{self.tmpdir}/flux")
+        jang.limits.get_limit_etot(self.det, self.gw, self.pars, f"{self.tmpdir}/etot")
+        jang.limits.get_limit_fnu(self.det, self.gw, self.pars, f"{self.tmpdir}/fnu")
         jang.significance.compute_prob_null_hypothesis(self.det, self.gw, self.pars)
 
     def test_limits_wsyst(self):

@@ -22,7 +22,8 @@ def poisson_several_samples(nobserved: np.ndarray, nbackground: np.ndarray, conv
 
 
 def logpointsource_one_sample(sample: Sample, nobserved: int, nbackground: float,
-                              conv: float, var: np.ndarray, ra_src: float, dec_src: float) -> np.ndarray:
+                              conv: float, ra_src: float, dec_src: float,
+                              var: np.ndarray, other_var: dict) -> np.ndarray:
     if sample.events is None:
         return logpoisson_one_sample(nobserved, nbackground, conv, var)
     nsignal = conv * var
@@ -34,11 +35,17 @@ def logpointsource_one_sample(sample: Sample, nobserved: int, nbackground: float
         for n in ("signal", "background"):
             ll = locals()[f"n{n}"]
             if sample.pdfs[n]["ang"] is not None:
-                ll *= sample.pdfs[n]["ang"](evt, ra_src, dec_src) if n == "signal" else sample.pdfs[n]["ang"](evt)
+                if n == "signal":
+                    ll *= sample.pdfs[n]["ang"](evt, ra_src, dec_src)
+                else:
+                    ll *= sample.pdfs[n]["ang"](evt)
             if sample.pdfs[n]["ene"] is not None:
                 ll *= sample.pdfs[n]["ene"](evt)
             if sample.pdfs[n]["time"] is not None:
-                ll *= sample.pdfs[n]["time"](evt)
+                if n == "signal" and "t0" in other_var and "sigma_t" in other_var:
+                    ll *= sample.pdfs[n]["time"](evt, other_var['t0'], other_var['sigma_t'])
+                else:
+                    ll *= sample.pdfs[n]["time"](evt)
             l += ll
         loglkl += np.log(l)
 
@@ -46,8 +53,9 @@ def logpointsource_one_sample(sample: Sample, nobserved: int, nbackground: float
 
 
 def pointsource_several_samples(samples: List[Sample], nobserved: np.ndarray, nbackground: np.ndarray,
-                                conv: np.ndarray, var: np.ndarray, ra_src: float, dec_src: float) -> np.ndarray:
+                                conv: np.ndarray, ra_src: float, dec_src: float,
+                                var: np.ndarray, other_var: dict) -> np.ndarray:
     loglkl = np.zeros_like(var)
     for n_obs, n_bkg, cv, s in zip(nobserved, nbackground, conv, samples):
-        loglkl += logpointsource_one_sample(s, n_obs, n_bkg, cv, var, ra_src, dec_src)
+        loglkl += logpointsource_one_sample(s, n_obs, n_bkg, cv, ra_src, dec_src, var, other_var)
     return np.exp(loglkl)

@@ -11,7 +11,7 @@ import jang.stats.likelihoods as lkl
 import jang.stats.priors as prior
 
 
-def compute_flux_posterior(detector: Detector, gw: GW, parameters: Parameters) -> Tuple[np.ndarray, np.ndarray]:
+def compute_flux_posterior(detector: Detector, gw: GW, parameters: Parameters, other_variables: dict = None) -> Tuple[np.ndarray, np.ndarray]:
     """Compute the posterior as a function of all-flavour neutrino flux at Earth.
 
     Args:
@@ -27,16 +27,25 @@ def compute_flux_posterior(detector: Detector, gw: GW, parameters: Parameters) -
     ana = Analysis(gw=gw, detector=detector, parameters=parameters)
 
     x_arr = np.logspace(*parameters.range_flux)
+    if other_variables is not None:
+        x_arr, *y_arr = np.meshgrid(x_arr, *other_variables.values(), indexing='ij')
+        ys_arr = {}
+        for i, var in enumerate(other_variables.keys()):
+            ys_arr[var] = y_arr[i]
+
     post_arr = np.zeros_like(x_arr)
 
     for toy in ana.toys:
         phi_to_nsig = ana.phi_to_nsig(toy)
         if parameters.likelihood_method == "poisson":
-            post_arr += lkl.poisson_several_samples(toy[1].nobserved, toy[1].nbackground, phi_to_nsig, x_arr) * \
+            post_arr += lkl.poisson_several_samples(toy[1].nobserved, toy[1].nbackground, phi_to_nsig, x_arr, ys_arr) * \
                 prior.signal_parameter(x_arr, toy[1].nbackground, phi_to_nsig, parameters.prior_signal)
         elif parameters.likelihood_method == "pointsource":
-            post_arr += lkl.pointsource_several_samples(detector.samples, toy[1].nobserved, toy[1].nbackground, phi_to_nsig, x_arr, toy[0].ra, toy[0].dec) * \
+            post_arr += lkl.pointsource_several_samples(detector.samples, toy[1].nobserved, toy[1].nbackground, phi_to_nsig, toy[0].ra, toy[0].dec, x_arr, ys_arr) * \
                 prior.signal_parameter(x_arr, toy[1].nbackground, phi_to_nsig, parameters.prior_signal)
+
+    print(x_arr.shape, post_arr.shape)
+    exit()
     return x_arr, post_arr
 
 

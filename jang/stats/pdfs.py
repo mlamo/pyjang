@@ -87,34 +87,34 @@ class TimeSignal(PDF):
 class TimeBoxSignal(PDF):
     """A common time signal PDF is 1/dt for t0 <= t < t0+dt and 0 otherwise."""
 
-    def __init__(self, t0: float, dt: float):
+    def __init__(self, t0: float = None, sigma_t: float = None):
         self.t0 = t0
-        self.dt = dt
+        self.sigma_t = sigma_t
 
-    def __call__(self, evt, t0: float = None, dt: float = None):
+    def __call__(self, evt, t0: float = None, sigma_t: float = None):
         t0 = self.t0 if t0 is None else t0
-        dt = self.dt if dt is None else dt
-        return 1/dt if t0 <= evt.dt < t0+dt else 0
+        sigma_t = self.sigma_t if sigma_t is None else sigma_t
+        return 1/sigma_t if t0 <= evt.dt < t0+sigma_t else 0
 
 
 class TimeGausSignal(PDF):
     """A commin time signal PDF is a normal distribution centered on t0."""
 
-    def __init__(self, t0: float, sigma: float):
+    def __init__(self, t0: float = None, sigma_t: float = None):
         self.t0 = t0
-        self.sigma = sigma
+        self.sigma_t = sigma_t
 
-    def __call__(self, evt, t0: float = None, sigma: float = None):
+    def __call__(self, evt, t0: float = None, sigma_t: float = None):
         t0 = self.t0 if t0 is None else t0
-        sigma = self.sigma if sigma is None else sigma
-        return norm.pdf(evt.dt, loc=t0, scale=sigma)
+        sigma_t = self.sigma_t if sigma_t is None else sigma_t
+        return norm.pdf(evt.dt, loc=t0, scale=sigma_t)
 
 
 class TimeBackground(PDF):
     """The standard time background PDF is an uniform function f(deltaT) = 1/timewindow."""
 
-    def __init__(self, timewindow: float):
-        self.timewindow = timewindow
+    def __init__(self, timewindow_length: float):
+        self.timewindow_length = timewindow_length
 
     def __call__(self, evt):
-        return 1/self.timewindow
+        return 1/self.timewindow_length

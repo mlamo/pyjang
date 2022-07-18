@@ -228,7 +228,8 @@ class Sample:
         self.energy_range = (None, None)
         self.nobserved, self.background = None, None
         self.events = None
-        self.pdfs = {}
+        self.pdfs = {"signal": {"ang": None, "ene": None, "time": None},
+                     "background": {"ang": None, "ene": None, "time": None}}
 
     def set_energy_range(self, emin: float, emax: float):
         self.energy_range = (emin, emax)
@@ -247,13 +248,21 @@ class Sample:
     def set_events(self, events: EventsList):
         self.events = events
 
-    def set_pdfs(self, sig_ang: pdf.AngularSignal, sig_ene: pdf.EnergySignal, bkg_ang: pdf.AngularBackground, bkg_ene: pdf.EnergyBackground):
+    def set_pdfs(self,
+                 sig_ang: pdf.AngularSignal = None, sig_ene: pdf.EnergySignal = None, sig_time: pdf.TimeSignal = None,
+                 bkg_ang: pdf.AngularBackground = None, bkg_ene: pdf.EnergyBackground = None, bkg_time: pdf.TimeBackground = None):
         if (sig_ang is None) ^ (bkg_ang is None):
             raise RuntimeError("One of the angular PDFs is missing!")
         if (sig_ene is None) ^ (bkg_ene is None):
-            raise RuntimeError("One of the enangularergy PDFs is missing!")
-        self.pdfs["signal"] = {"ang": sig_ang, "ene": sig_ene}
-        self.pdfs["background"] = {"ang": bkg_ang, "ene": bkg_ene}
+            raise RuntimeError("One of the energy PDFs is missing!")
+        if (sig_time is None) ^ (bkg_time is None):
+            raise RuntimeError("One of the time PDFs is missing!")
+        self.pdfs["signal"]["ang"] = sig_ang
+        self.pdfs["signal"]["ene"] = sig_ene
+        self.pdfs["signal"]["time"] = sig_time
+        self.pdfs["background"]["ang"] = bkg_ang
+        self.pdfs["background"]["ene"] = bkg_ene
+        self.pdfs["background"]["time"] = bkg_time
 
     @property
     def log_energy_range(self) -> Tuple[float, float]:
