@@ -23,12 +23,14 @@ def poisson_several_samples(nobserved: np.ndarray, nbackground: np.ndarray, conv
 
 def logpointsource_one_sample(sample: Sample, nobserved: int, nbackground: float,
                               conv: float, ra_src: float, dec_src: float,
-                              var: np.ndarray, other_var: dict) -> np.ndarray:
+                              var: np.ndarray, other_var: dict = None) -> np.ndarray:
     if sample.events is None:
         return logpoisson_one_sample(nobserved, nbackground, conv, var)
     nsignal = conv * var
     nexpected = nbackground + nsignal
     loglkl = np.where(nexpected > 0, - nexpected - gammaln(nobserved + 1), -np.inf)
+
+    has_var_time = (other_var is not None) and ("t0" in other_var and "sigma_t" in other_var)
 
     for evt in sample.events:
         l = 0
@@ -42,7 +44,7 @@ def logpointsource_one_sample(sample: Sample, nobserved: int, nbackground: float
             if sample.pdfs[n]["ene"] is not None:
                 ll *= sample.pdfs[n]["ene"](evt)
             if sample.pdfs[n]["time"] is not None:
-                if n == "signal" and "t0" in other_var and "sigma_t" in other_var:
+                if n == "signal" and has_var_time:
                     ll *= sample.pdfs[n]["time"](evt, other_var['t0'], other_var['sigma_t'])
                 else:
                     ll *= sample.pdfs[n]["time"](evt)
@@ -54,7 +56,7 @@ def logpointsource_one_sample(sample: Sample, nobserved: int, nbackground: float
 
 def pointsource_several_samples(samples: List[Sample], nobserved: np.ndarray, nbackground: np.ndarray,
                                 conv: np.ndarray, ra_src: float, dec_src: float,
-                                var: np.ndarray, other_var: dict) -> np.ndarray:
+                                var: np.ndarray, other_var: dict = None) -> np.ndarray:
     loglkl = np.zeros_like(var)
     for n_obs, n_bkg, cv, s in zip(nobserved, nbackground, conv, samples):
         loglkl += logpointsource_one_sample(s, n_obs, n_bkg, cv, ra_src, dec_src, var, other_var)
