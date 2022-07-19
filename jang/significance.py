@@ -7,6 +7,7 @@ from jang.analysis import Analysis
 from jang.gw import GW, get_search_region
 from jang.neutrinos import Detector
 from jang.parameters import Parameters
+import jang.stats
 import jang.stats.likelihoods as lkl
 import jang.stats.priors as prior
 
@@ -24,7 +25,8 @@ def compute_prob_null_poisson(detector: Detector, gw: GW, parameters: Parameters
     ana = Analysis(gw=gw, detector=detector, parameters=parameters)
     ana.prepare_toys()
 
-    x_arr = np.logspace(*parameters.range_flux)
+    var_flux = jang.stats.PosteriorVariable("flux", parameters.range_flux[0:2], parameters.range_flux[2], log=True)
+
     f0, f1 = 0, 0
     gamma, delta = 0, 0
 
@@ -32,23 +34,23 @@ def compute_prob_null_poisson(detector: Detector, gw: GW, parameters: Parameters
         phi_to_nsig = ana.phi_to_nsig(toy)
         # H1 (signal+background) // Nobs=bkg
         f1 += np.sum(
-            lkl.poisson_several_samples(np.floor(toy[1].nbackground), toy[1].nbackground, phi_to_nsig, x_arr[:-1]) *
-            prior.signal_parameter(x_arr[:-1], toy[1].nbackground, phi_to_nsig, parameters.prior_signal) *
-            np.diff(x_arr)
+            lkl.poisson_several_samples(np.floor(toy[1].nbackground), toy[1].nbackground, phi_to_nsig, {0: var_flux.array[:-1]}) *
+            prior.signal_parameter(var_flux.array[:-1], toy[1].nbackground, phi_to_nsig, parameters.prior_signal) *
+            np.diff(var_flux.array)
         )
         # H1 (signal+background) // Nobs=real
         delta += np.sum(
-            lkl.poisson_several_samples(toy[1].nobserved, toy[1].nbackground, phi_to_nsig, x_arr[:-1]) *
-            prior.signal_parameter(x_arr[:-1], toy[1].nbackground, phi_to_nsig, parameters.prior_signal) *
-            np.diff(x_arr)
+            lkl.poisson_several_samples(toy[1].nobserved, toy[1].nbackground, phi_to_nsig, {0: var_flux.array[:-1]}) *
+            prior.signal_parameter(var_flux.array[:-1], toy[1].nbackground, phi_to_nsig, parameters.prior_signal) *
+            np.diff(var_flux.array)
         )
 
     for toy in ana.toys_det:
         zeros = np.zeros_like(toy.nbackground)
         # H0 (background) // Nobs=bkg
-        f0 += lkl.poisson_several_samples(np.floor(toy.nbackground), toy.nbackground, zeros, 0.0,)
+        f0 += lkl.poisson_several_samples(np.floor(toy.nbackground), toy.nbackground, zeros, {0: 0.0})
         # H0 (background) // Nobs=real
-        gamma += lkl.poisson_several_samples(toy.nobserved, toy.nbackground, zeros, 0.0)
+        gamma += lkl.poisson_several_samples(toy.nobserved, toy.nbackground, zeros, {0: 0.0})
 
     p0 = gamma / (gamma + f0 / f1 * delta)
 
@@ -67,7 +69,8 @@ def compute_prob_null_pointsource(detector: Detector, gw: GW, parameters: Parame
     ana = Analysis(gw=gw, detector=detector, parameters=parameters)
     ana.prepare_toys()
 
-    x_arr = np.logspace(*parameters.range_flux)
+    var_flux = jang.stats.PosteriorVariable("flux", parameters.range_flux[0:2], parameters.range_flux[2], log=True)
+
     f0, f1 = 0, 0
     gamma, delta = 0, 0
 
@@ -75,23 +78,23 @@ def compute_prob_null_pointsource(detector: Detector, gw: GW, parameters: Parame
         phi_to_nsig = ana.phi_to_nsig(toy)
         # H1 (signal+background) // Nobs=bkg
         f1 += np.sum(
-            lkl.poisson_several_samples(np.floor(toy[1].nbackground), toy[1].nbackground, phi_to_nsig, x_arr[:-1]) *
-            prior.signal_parameter(x_arr[:-1], toy[1].nbackground, phi_to_nsig, parameters.prior_signal) *
-            np.diff(x_arr)
+            lkl.poisson_several_samples(np.floor(toy[1].nbackground), toy[1].nbackground, phi_to_nsig, {0: var_flux.array[:-1]}) *
+            prior.signal_parameter(var_flux.array[:-1], toy[1].nbackground, phi_to_nsig, parameters.prior_signal) *
+            np.diff(var_flux.array)
         )
         # H1 (signal+background) // Nobs=real
         delta += np.sum(
-            lkl.pointsource_several_samples(detector.samples, toy[1].nobserved, toy[1].nbackground, phi_to_nsig, x_arr[:-1], toy[0].ra, toy[0].dec) *
-            prior.signal_parameter(x_arr[:-1], toy[1].nbackground, phi_to_nsig, parameters.prior_signal) *
-            np.diff(x_arr)
+            lkl.pointsource_several_samples(detector.samples, toy[1].nobserved, toy[1].nbackground, phi_to_nsig, toy[0].ra, toy[0].dec, {0: var_flux.array[:-1]}) *
+            prior.signal_parameter(var_flux.array[:-1], toy[1].nbackground, phi_to_nsig, parameters.prior_signal) *
+            np.diff(var_flux.array)
         )
 
         zeros = np.zeros_like(toy[1].nbackground)
         # H0 (background) // Nobs=bkg
-        f0 += lkl.poisson_several_samples(np.floor(toy[1].nbackground), toy[1].nbackground, zeros, 0.0)
+        f0 += lkl.poisson_several_samples(np.floor(toy[1].nbackground), toy[1].nbackground, zeros, {0: 0.0})
         # H0 (background) // Nobs=real
         gamma += lkl.pointsource_several_samples(detector.samples,
-                                                 toy[1].nobserved, toy[1].nbackground, zeros, 0.0, toy[0].ra, toy[0].dec)
+                                                 toy[1].nobserved, toy[1].nbackground, zeros, toy[0].ra, toy[0].dec, {0: 0.0})
 
     p0 = gamma / (gamma + f0 / f1 * delta)
 

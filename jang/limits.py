@@ -16,7 +16,7 @@ import jang.stats.posteriors
 matplotlib.use("Agg")
 
 
-def plot_likelihood(
+def plot_posterior(
     x: np.ndarray, y: np.ndarray, limit: float, xlabel: str, outfile: str
 ):
 
@@ -34,18 +34,20 @@ def get_limit_flux(
     detector: DetectorBase,
     gw: GW,
     parameters: Parameters,
-    saved_lkl: Optional[str] = None,
+    outfile: Optional[str] = None,
 ) -> float:
     """Return 90% upper limit on flux normalization (dn/dE = norm*{parameters.spectrum}).
-    The related likelihood will be saved in "{saved_lkl}.[npy/png]" if provided."""
+    The related posterior will be saved in "{outfile}.[npy/png]" if provided."""
 
-    x, y = jang.stats.posteriors.compute_flux_posterior(detector, gw, parameters)
-    x, y = jang.stats.normalize(x, y)
+    variables = [jang.stats.PosteriorVariable("flux", parameters.range_flux[0:2], parameters.range_flux[2], log=True)]
+
+    x, y = jang.stats.posteriors.compute_flux_posterior(variables, detector, gw, parameters)
+    x, y = jang.stats.normalize(x[0], y)
     limit = jang.stats.compute_upperlimit_from_x_y(x, y)
-    if saved_lkl is not None:
-        os.makedirs(os.path.dirname(saved_lkl), exist_ok=True)
-        np.save(saved_lkl + ".npy", [x, y])
-        plot_likelihood(x, y, limit, "Flux normalization", saved_lkl + ".png")
+    if outfile is not None:
+        os.makedirs(os.path.dirname(outfile), exist_ok=True)
+        np.save(outfile + ".npy", [x, y])
+        plot_posterior(x, y, limit, "Flux normalization", outfile + ".png")
     logging.getLogger("jang").info(
         "[Limits] %s, %s, %s, limit(Flux) = %.3e",
         gw.name,
@@ -60,17 +62,22 @@ def get_limit_etot(
     detector: DetectorBase,
     gw: GW,
     parameters: Parameters,
-    saved_lkl: Optional[str] = None,
+    outfile: Optional[str] = None,
+
+
 ) -> float:
     """Return 90% upper limit on the total energy emitted in neutrinos (all-flavours) E(tot) [in erg].
-    The related likelihood will be saved in "{saved_lkl}.[npy/png]" if provided."""
-    x, y = jang.stats.posteriors.compute_etot_posterior(detector, gw, parameters)
-    x, y = jang.stats.normalize(x, y)
+    The related posterior will be saved in "{outfile}.[npy/png]" if provided."""
+
+    variables = [jang.stats.PosteriorVariable("etot", parameters.range_etot[0:2], parameters.range_etot[2], log=True)]
+
+    x, y = jang.stats.posteriors.compute_etot_posterior(variables, detector, gw, parameters)
+    x, y = jang.stats.normalize(x[0], y)
     limit = jang.stats.compute_upperlimit_from_x_y(x, y)
-    if saved_lkl is not None:
-        os.makedirs(os.path.dirname(saved_lkl), exist_ok=True)
-        np.save(saved_lkl + ".npy", [x, y])
-        plot_likelihood(x, y, limit, r"$E^{tot}_{\nu}$", saved_lkl + ".png")
+    if outfile is not None:
+        os.makedirs(os.path.dirname(outfile), exist_ok=True)
+        np.save(outfile + ".npy", [x, y])
+        plot_posterior(x, y, limit, r"$E^{tot}_{\nu}$", outfile + ".png")
     logging.getLogger("jang").info(
         "[Limits] %s, %s, %s, %s, limit(Etot) = %.3e erg",
         gw.name,
@@ -86,17 +93,20 @@ def get_limit_fnu(
     detector: DetectorBase,
     gw: GW,
     parameters: Parameters,
-    saved_lkl: Optional[str] = None,
+    outfile: Optional[str] = None,
 ) -> float:
     """Return 90% upper limit on fnu=E(tot)/E(radiated).
-    The related likelihood will be saved in "{saved_lkl}.[npy/png]" if provided."""
-    x, y = jang.stats.posteriors.compute_fnu_posterior(detector, gw, parameters)
-    x, y = jang.stats.normalize(x, y)
+    The related posterior will be saved in "{outfile}.[npy/png]" if provided."""
+
+    variables = [jang.stats.PosteriorVariable("fnu", parameters.range_fnu[0:2], parameters.range_fnu[2], log=True)]
+
+    x, y = jang.stats.posteriors.compute_fnu_posterior(variables, detector, gw, parameters)
+    x, y = jang.stats.normalize(x[0], y)
     limit = jang.stats.compute_upperlimit_from_x_y(x, y)
-    if saved_lkl is not None:
-        os.makedirs(os.path.dirname(saved_lkl), exist_ok=True)
-        np.save(saved_lkl + ".npy", [x, y])
-        plot_likelihood(x, y, limit, r"$E^{tot}_{\nu}/E_{rad}$", saved_lkl + ".png")
+    if outfile is not None:
+        os.makedirs(os.path.dirname(outfile), exist_ok=True)
+        np.save(outfile + ".npy", [x, y])
+        plot_posterior(x, y, limit, r"$E^{tot}_{\nu}/E_{rad}$", outfile + ".png")
     logging.getLogger("jang").info(
         "[Limits] %s, %s, %s, %s, limit(fnu) = %.3e",
         gw.name,

@@ -1,7 +1,29 @@
-from typing import Tuple
+from typing import Callable, Tuple, Union
 
 import numpy as np
 from scipy.interpolate import interp1d
+
+
+class PosteriorVariable:
+
+    def __init__(self, name: str, range: tuple, nevals: int = 101, log: bool = False):
+        self.name = name
+        self.range = range
+        self.nevals = nevals
+        self.log = log
+        self.prior = None
+
+    @property
+    def array(self):
+        if self.log:
+            return np.logspace(*self.range, self.nevals)
+        return np.linsapce(*self.range, self.nevals)
+
+    def set_prior(self, prior: Callable):
+        self.prior = np.vectorize(prior)
+
+    def prior(self, x: Union[float, np.ndarray]):
+        return self.prior(x)
 
 
 def compute_upperlimit_from_x_y(
