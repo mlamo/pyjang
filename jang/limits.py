@@ -39,12 +39,7 @@ def get_limit_flux(
     """Return 90% upper limit on flux normalization (dn/dE = norm*{parameters.spectrum}).
     The related likelihood will be saved in "{saved_lkl}.[npy/png]" if provided."""
 
-    other_variables = {
-        "t0": np.linspace(-400, 400, 801),
-        "sigma_t": np.logspace(0, 2, 11)
-    }
-
-    x, y = jang.stats.posteriors.compute_flux_posterior(detector, gw, parameters, other_variables=other_variables)
+    x, y = jang.stats.posteriors.compute_flux_posterior(detector, gw, parameters)
     x, y = jang.stats.normalize(x, y)
     limit = jang.stats.compute_upperlimit_from_x_y(x, y)
     if saved_lkl is not None:

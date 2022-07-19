@@ -94,7 +94,7 @@ class TimeBoxSignal(PDF):
     def __call__(self, evt, t0: float = None, sigma_t: float = None):
         t0 = self.t0 if t0 is None else t0
         sigma_t = self.sigma_t if sigma_t is None else sigma_t
-        return 1/sigma_t if t0 <= evt.dt < t0+sigma_t else 0
+        return 1/sigma_t * ((evt.dt >= t0) & (evt.dt < t0+sigma_t))
 
 
 class TimeGausSignal(PDF):
