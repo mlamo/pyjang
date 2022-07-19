@@ -1,11 +1,12 @@
 """Compute upper limits for any given Detector or SuperDetector (combination of Detector) and selected model, using the likelihoods."""
 
+import copy
 import logging
 import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
 import os
-from typing import Optional, Union
+from typing import List, Optional
 
 from jang.gw import GW
 from jang.neutrinos import DetectorBase
@@ -63,8 +64,6 @@ def get_limit_etot(
     gw: GW,
     parameters: Parameters,
     outfile: Optional[str] = None,
-
-
 ) -> float:
     """Return 90% upper limit on the total energy emitted in neutrinos (all-flavours) E(tot) [in erg].
     The related posterior will be saved in "{outfile}.[npy/png]" if provided."""
@@ -109,6 +108,57 @@ def get_limit_fnu(
         plot_posterior(x, y, limit, r"$E^{tot}_{\nu}/E_{rad}$", outfile + ".png")
     logging.getLogger("jang").info(
         "[Limits] %s, %s, %s, %s, limit(fnu) = %.3e",
+        gw.name,
+        detector.name,
+        parameters.jet.__repr__(),
+        parameters.spectrum,
+        limit,
+    )
+    return limit
+
+
+def get_limit_flux_with_othervars(
+    detector: DetectorBase,
+    gw: GW,
+    parameters: Parameters,
+    other_variables: List[jang.stats.PosteriorVariable],
+    outfile: Optional[str] = None,
+) -> float:
+    """Return 90% upper limit on flux normalization (dn/dE = norm*{parameters.spectrum}).
+    The related likelihood will be saved in "{outfile}.[npy/png]" if provided."""
+
+    variables = [jang.stats.PosteriorVariable("flux", parameters.range_fnu[0:2],
+                                              parameters.range_fnu[2], log=True)] + other_variables
+    x, y = jang.stats.posteriors.compute_flux_posterior(variables, detector, gw, parameters)
+
+    # add the priors on other variables
+    for var in variables[1:]:
+        y *= var.prior(x[var.name])
+    # marginalize over other variables
+    # e.g., F(x) = integral f(x,y,z) dy dz = sum_i=0^M sum_j=0^N f(x, yi, zj) delta(yi) delta(zj)
+    D = {}  # store the delta functions
+    Y = copy.copy(y)  # the multidim posterior shape should be reduced by one in each marginalized dimension
+    for a, var in enumerate(variables):
+        if a == 0:
+            continue
+        D[var.name] = copy.copy(x[var.name])
+        for aa in np.arange(1, len(variables)):
+            if aa != a:
+                D[var.name] = np.delete(D[var.name], -1, axis=aa)
+        D[var.name] = np.diff(D[var.name], axis=a)  # delta(yi), ...
+        Y = np.delete(Y, -1, axis=a)
+    for d in D.values():
+        Y *= d  # f(x, yi, zj) delta(yi) delta(zj)
+    Y = np.sum(Y, axis=tuple(np.arange(1, len(variables))))
+
+    X, Y = jang.stats.normalize(variables[0].array, Y)
+    limit = jang.stats.compute_upperlimit_from_x_y(X, Y)
+    if outfile is not None:
+        os.makedirs(os.path.dirname(outfile), exist_ok=True)
+        np.save(outfile + ".npy", [*x.values(), y])
+        plot_posterior(X, Y, limit, "Flux normalization", outfile + ".png")
+    logging.getLogger("jang").info(
+        "[Limits] %s, %s, %s, %s, limit(Flux) = %.3e",
         gw.name,
         detector.name,
         parameters.jet.__repr__(),

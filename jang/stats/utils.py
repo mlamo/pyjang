@@ -11,13 +11,13 @@ class PosteriorVariable:
         self.range = range
         self.nevals = nevals
         self.log = log
-        self.prior = None
+        self.prior = lambda x: 1
 
     @property
     def array(self):
         if self.log:
             return np.logspace(*self.range, self.nevals)
-        return np.linsapce(*self.range, self.nevals)
+        return np.linspace(*self.range, self.nevals)
 
     def set_prior(self, prior: Callable):
         self.prior = np.vectorize(prior)
