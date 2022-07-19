@@ -45,6 +45,8 @@ def compute_upperlimit_from_x_y(
 
 def normalize(x_arr: np.ndarray, y_arr: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
     """Normalize the posterior y_arr=P(x_arr)."""
+    if x_arr.shape != y_arr.shape:
+        raise RuntimeError(f"x_arr and y_arr have different dimensions: {x_arr.shape}, {y_arr.shape}")
     if np.all(y_arr == 0):
         return x_arr, y_arr
     integral = np.sum(y_arr[:-1] * (x_arr[1:] - x_arr[:-1]))
