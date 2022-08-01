@@ -85,7 +85,7 @@ def compute_bayes_factor_pointsource(detector: Detector, gw: GW, parameters: Par
         B0 += lkl.poisson_several_samples(toy[1].nobserved, toy[1].nbackground, phi_to_nsig, {0: 0.0})
 
         toy_H0 = ToyResult(
-            poisson.rvs(toy[1].nbackground),
+            [poisson.rvs(b) for b in toy[1].nbackground],
             toy[1].nbackground,
             toy[1].var_acceptance
         )
