@@ -40,7 +40,7 @@ def compute_flux_posterior(variables: List[PosteriorVariable], detector: Detecto
             arr_post += lkl.poisson_several_samples(toy[1].nobserved, toy[1].nbackground, phi_to_nsig, arr_vars) * \
                 prior.signal_parameter(arr_vars[0], toy[1].nbackground, phi_to_nsig, parameters.prior_signal)
         elif parameters.likelihood_method == "pointsource":
-            arr_post += lkl.pointsource_several_samples(detector.samples, toy[1].nobserved, toy[1].nbackground, phi_to_nsig, toy[0].ra, toy[0].dec, arr_vars) * \
+            arr_post += lkl.pointsource_several_samples(toy[1].nobserved, toy[1].nbackground, toy[1].events, phi_to_nsig, detector.samples, toy[0].ra, toy[0].dec, arr_vars) * \
                 prior.signal_parameter(arr_vars[0], toy[1].nbackground, phi_to_nsig, parameters.prior_signal)
 
     return arr_vars, arr_post
@@ -75,7 +75,7 @@ def compute_etot_posterior(variables: List[PosteriorVariable], detector: Detecto
             arr_post += lkl.poisson_several_samples(toy[1].nobserved, toy[1].nbackground, etot_to_nsig, arr_vars) * \
                 prior.signal_parameter(arr_vars[0], toy[1].nbackground, etot_to_nsig, parameters.prior_signal)
         elif parameters.likelihood_method == "pointsource":
-            arr_post += lkl.pointsource_several_samples(detector.samples, toy[1].nobserved, toy[1].nbackground, etot_to_nsig, toy[0].ra, toy[0].dec, arr_vars) * \
+            arr_post += lkl.pointsource_several_samples(toy[1].nobserved, toy[1].nbackground, toy[1].events, etot_to_nsig, detector.samples, toy[0].ra, toy[0].dec, arr_vars) * \
                 prior.signal_parameter(arr_vars[0], toy[1].nbackground, etot_to_nsig, parameters.prior_signal)
     return arr_vars, arr_post
 
@@ -109,6 +109,6 @@ def compute_fnu_posterior(variables: List[PosteriorVariable], detector: Detector
             arr_post += lkl.poisson_several_samples(toy[1].nobserved, toy[1].nbackground, fnu_to_nsig, arr_vars) * \
                 prior.signal_parameter(arr_vars[0], toy[1].nbackground, fnu_to_nsig, parameters.prior_signal)
         elif parameters.likelihood_method == "pointsource":
-            arr_post += lkl.pointsource_several_samples(detector.samples, toy[1].nobserved, toy[1].nbackground, fnu_to_nsig, toy[0].ra, toy[0].dec, arr_vars) * \
+            arr_post += lkl.pointsource_several_samples(toy[1].nobserved, toy[1].nbackground, toy[1].events, fnu_to_nsig, detector.samples, toy[0].ra, toy[0].dec, arr_vars) * \
                 prior.signal_parameter(arr_vars[0], toy[1].nbackground, fnu_to_nsig, parameters.prior_signal)
     return arr_vars, arr_post

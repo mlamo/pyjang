@@ -281,12 +281,11 @@ class Sample:
 class ToyResult:
     """Class to handle toys related to detector systematics."""
 
-    def __init__(
-        self, nobserved: np.ndarray, nbackground: np.ndarray, var_acceptance: np.ndarray
-    ):
+    def __init__(self, nobserved: np.ndarray, nbackground: np.ndarray, var_acceptance: np.ndarray, events: Optional[List[EventsList]] = None):
         self.nobserved = np.array(nobserved)
         self.nbackground = np.array(nbackground)
         self.var_acceptance = np.array(var_acceptance)
+        self.events = events
 
     def __str__(self):
         return "ToyResult: n(observed)=%s, n(background)=%s, var(acceptance)=%s" % (
@@ -343,31 +342,28 @@ class DetectorBase(abc.ABC):
         toys = []
         nobserved = np.array([s.nobserved for s in self.samples])
         background = np.array([s.background for s in self.samples])
-        if np.any(nobserved == None):
-            raise RuntimeError(
-                "[Detector] The number of observed events is not correctly filled."
-            )
-        if ntoys == 0:
-            return [
-                ToyResult(
-                    nobserved,
-                    [bkg.nominal for bkg in background],
-                    np.ones(self.nsamples),
-                )
-            ]
-        toys_acceptance = multivariate_normal.rvs(
-            mean=np.ones(self.nsamples), cov=self.error_acceptance, size=ntoys
-        )
+        events = [s.events for s in self.samples]
 
+        if np.any(nobserved == None):
+            raise RuntimeError("[Detector] The number of observed events is not correctly filled.")
+
+        # if no toys
+        if ntoys == 0:
+            nbackground = [bkg.nominal for bkg in background]
+            toy = ToyResult(nobserved, nbackground, np.ones(self.nsamples), events)
+            return [toy]
+
+        # acceptance toys
+        toys_acceptance = multivariate_normal.rvs(mean=np.ones(self.nsamples), cov=self.error_acceptance, size=ntoys)
         for i in range(ntoys):
             while np.any(toys_acceptance[i] < 0):
-                toys_acceptance[i] = multivariate_normal.rvs(
-                    mean=np.ones(self.nsamples), cov=self.error_acceptance
-                )
+                toys_acceptance[i] = multivariate_normal.rvs(mean=np.ones(self.nsamples), cov=self.error_acceptance)
+
+        # background toys
         toys_background = np.array([bkg.prepare_toys(ntoys) for bkg in background]).T
 
         for i in range(ntoys):
-            toys.append(ToyResult(nobserved, toys_background[i], toys_acceptance[i]))
+            toys.append(ToyResult(nobserved, toys_background[i], toys_acceptance[i], events))
         return toys
 
 
