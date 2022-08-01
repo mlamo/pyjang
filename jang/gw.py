@@ -304,17 +304,14 @@ class Database:
         self.db.to_csv(outfile)
 
 
-def get_search_region(
-    detector: jang.neutrinos.Detector, gw: GW, parameters: jang.parameters.Parameters
-):
+def get_search_region(detector: jang.neutrinos.Detector, gw: GW, pars: jang.parameters.Parameters):
 
-    region = gw.fits.get_signal_region(
-        parameters.nside, parameters.get_searchregion_gwfraction()
-    )
-    if not parameters.get_searchregion_iszeroincluded():
-        region_nonzero = detector.get_nonempty_acceptance_pixels(
-            parameters.spectrum, parameters.nside
-        )
+    region = gw.fits.get_signal_region(pars.nside, pars.get_searchregion_gwfraction())
+    if not pars.get_searchregion_iszeroincluded():
+        region_nonzero = detector.get_nonempty_acceptance_pixels(pars.spectrum, pars.nside)
         region = np.intersect1d(region, region_nonzero)
+    
+    if len(region) == 0:
+        raise RuntimeError("[gw] The search region has been reduced to empty. Please check 'search_region' parameter.")
 
     return region
