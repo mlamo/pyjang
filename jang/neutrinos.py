@@ -288,10 +288,11 @@ class ToyResult:
         self.events = events
 
     def __str__(self):
-        return "ToyResult: n(observed)=%s, n(background)=%s, var(acceptance)=%s" % (
+        return "ToyResult: n(observed)=%s, n(background)=%s, var(acceptance)=%s, events=%s" % (
             self.nobserved,
             self.nbackground,
             self.var_acceptance,
+            self.events
         )
 
 
