@@ -29,19 +29,19 @@ def stack_events_listgw(
     for _, ev in db.db.iterrows():
         if ev["GW.name"] not in list_gw:
             continue
-        if not ev["Results.likelihoods_etot"] or not ev["Results.likelihoods_fnu"]:
-            log.warning("Missing likelihood files for %s, skipping...", ev["GW.name"])
+        if not ev["Results.posterior_etot"] or not ev["Results.posterior_fnu"]:
+            log.warning("Missing posterior files for %s, skipping...", ev["GW.name"])
             continue
         if ev["GW.name"] in triggers:
             log.error("%s is present several times in the database, skipping this one!", ev["GW.name"])
             continue
         triggers.append(ev["GW.name"])
         #
-        x, y = np.load(ev["Results.likelihoods_etot"] + ".npy")
+        x, y = np.load(ev["Results.posterior_etot"] + ".npy")
         f = interp1d(x, y, bounds_error=False, fill_value=(y[0], y[-1]))
         loglkl_etot += np.log(f(etot_arr))
         #
-        x, y = np.load(ev["Results.likelihoods_fnu"] + ".npy")
+        x, y = np.load(ev["Results.posterior_fnu"] + ".npy")
         f = interp1d(x, y, bounds_error=False, fill_value=(y[0], y[-1]))
         loglkl_fnu += np.log(f(fnu_arr))
     if len(triggers) != len(list_gw):
@@ -71,18 +71,18 @@ def stack_events_weightedevents(
     loglkl_fnu = {}
 
     for _, ev in db.db.iterrows():
-        if not ev["Results.likelihoods_etot"] or not ev["Results.likelihoods_fnu"]:
-            log.warning("Missing likelihood files for %s, skipping...", ev["GW.name"])
+        if not ev["Results.posterior_etot"] or not ev["Results.posterior_fnu"]:
+            log.warning("Missing posterior files for %s, skipping...", ev["GW.name"])
             continue
         if ev["GW.name"] in loglkl_etot.keys():
             log.error("%s is present several times in the database, skipping this one!", ev["GW.name"])
             continue
         #
-        x, y = np.load(ev["Results.likelihoods_etot"] + ".npy")
+        x, y = np.load(ev["Results.posterior_etot"] + ".npy")
         f = interp1d(x, y, bounds_error=False, fill_value=(y[0], y[-1]))
         loglkl_etot[ev["GW.name"]] = np.log(f(etot_arr))
         #
-        x, y = np.load(ev["Results.likelihoods_fnu"] + ".npy")
+        x, y = np.load(ev["Results.posterior_fnu"] + ".npy")
         f = interp1d(x, y, bounds_error=False, fill_value=(y[0], y[-1]))
         loglkl_fnu[ev["GW.name"]] = np.log(f(fnu_arr))
     if len(loglkl_fnu.items()) != len(gw_withweights):

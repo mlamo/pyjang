@@ -41,9 +41,9 @@ class Database:
         limit_flux: float,
         limit_etot: float,
         limit_fnu: float,
-        file_lkl_flux: str = None,
-        file_lkl_etot: str = None,
-        file_lkl_fnu: str = None,
+        file_flux: str = None,
+        file_etot: str = None,
+        file_fnu: str = None,
         custom: Optional[dict] = None,
     ):
         """Adds new entry to the database."""
@@ -94,9 +94,9 @@ class Database:
             "Results.limit_flux": limit_flux,
             "Results.limit_etot": limit_etot,
             "Results.limit_fnu": limit_fnu,
-            "Results.likelihoods_flux": file_lkl_flux,
-            "Results.likelihoods_etot": file_lkl_etot,
-            "Results.likelihoods_fnu": file_lkl_fnu,
+            "Results.posterior_flux": file_flux,
+            "Results.posterior_etot": file_etot,
+            "Results.posterior_fnu": file_fnu,
         }
         if custom is not None:
             entry.update({f"Custom.{k}": v for k, v in custom.items()})
