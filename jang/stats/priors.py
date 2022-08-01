@@ -1,8 +1,12 @@
 import numpy as np
 
 
-def flat(var: np.ndarray, bkg: np.ndarray, conv: np.ndarray):
+def flat(var: np.ndarray):
     return np.ones_like(var)
+
+
+def invsqrt(var: np.ndarray):
+    return 1/np.sqrt(var)
     
 
 def jeffrey_poisson(var: np.ndarray, bkg: np.ndarray, conv: np.ndarray):
@@ -17,8 +21,10 @@ def jeffrey_poisson(var: np.ndarray, bkg: np.ndarray, conv: np.ndarray):
 def signal_parameter(var: np.ndarray, bkg: np.ndarray, conv: np.ndarray, prior_type: str):
 
     if prior_type == "flat":
-        return flat(var, bkg, conv)
+        return flat(var)
     elif prior_type == "jeffrey":
         return jeffrey_poisson(var, bkg, conv)
+    elif prior_type == "invsqrt":
+        return invsqrt(var)
     else:
         raise RuntimeError(f"Unknown prior type {prior_type}")

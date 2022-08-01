@@ -4,7 +4,7 @@ analysis:
   ntoys_det_systematics: 0
   search_region: region_90  # choices are 'fullsky', 'bestfit' or 'region_X' for the X% confidence region
   likelihood: poisson  # choices are 'poisson', 'pointsource'
-  prior_signal: flat  # choices are 'flat' or 'jeffrey'
+  prior_signal: flat  # choices are 'flat', 'invsqrt', or 'jeffrey'
 
 range:
   log10_flux: [-5, 5, 1000]
