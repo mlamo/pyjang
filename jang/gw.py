@@ -88,9 +88,7 @@ class GWFits:
         tmax, pmax = hp.pix2ang(nside, np.argmax(map))
         return pmax, np.pi/2 - tmax
 
-    def get_signal_region(
-        self, nside: int, contained_prob: float = 0.90
-    ) -> np.ndarray:
+    def get_signal_region(self, nside: int, contained_prob: float = 0.90) -> np.ndarray:
         """Get the region containing a given probability of the skymap, for a given resolution."""
         skymap = self.get_skymap(nside)
         npix = hp.get_map_size(skymap)
@@ -106,6 +104,10 @@ class GWFits:
         iSortMax = np.argwhere(sortedCumulProba > contained_prob)[0][0]
         pixReg = iSort[:iSortMax+1]
         return pixReg
+
+    def get_area_region(self, contained_prob: float, degrees: bool = True):
+        region = self.get_signal_region(nside=128, contained_prob=contained_prob)
+        return len(region) * hp.nside2pixarea(128, degrees=degrees)
 
 
 class GWSamples:
@@ -308,9 +310,7 @@ def get_search_region(
     detector: jang.neutrinos.Detector, gw: GW, parameters: jang.parameters.Parameters
 ):
 
-    region = gw.fits.get_signal_region(
-        parameters.nside, parameters.get_searchregion_gwfraction()
-    )
+    region = gw.fits.get_signal_region(parameters.nside, parameters.get_searchregion_gwfraction())
     if not parameters.get_searchregion_iszeroincluded():
         region_nonzero = detector.get_nonempty_acceptance_pixels(
             parameters.spectrum, parameters.nside
