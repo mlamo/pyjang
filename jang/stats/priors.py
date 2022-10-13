@@ -1,9 +1,13 @@
 import numpy as np
 
 
-def flat(var: np.ndarray, bkg: np.ndarray, conv: np.ndarray):
+def flat(var: np.ndarray):
     return np.ones_like(var)
-    
+
+
+def flat_nsig(var: np.ndarray, conv: np.ndarray):
+    return np.ones_like(var) * np.sum(conv)
+
 
 def jeffrey_poisson(var: np.ndarray, bkg: np.ndarray, conv: np.ndarray):
     nsamples = len(bkg)
@@ -12,12 +16,14 @@ def jeffrey_poisson(var: np.ndarray, bkg: np.ndarray, conv: np.ndarray):
         for i in range(nsamples)
     ]
     return np.sqrt(np.sum(tmp, axis=0))
-    
+
 
 def signal_parameter(var: np.ndarray, bkg: np.ndarray, conv: np.ndarray, prior_type: str):
 
     if prior_type == "flat":
-        return flat(var, bkg, conv)
+        return flat(var)
+    elif prior_type == "flat_nsig":
+        return flat_nsig(var, conv)
     elif prior_type == "jeffrey":
         return jeffrey_poisson(var, bkg, conv)
     else:
