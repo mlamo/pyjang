@@ -27,9 +27,7 @@ class Analysis:
         if self._parameters.nside is None:
             self._parameters.nside = nside  # pragma: no cover
         elif self._parameters.nside != nside:
-            raise RuntimeError(
-                "Something went wrong with map resolutions!"
-            )  # pragma: no cover
+            raise RuntimeError("Something went wrong with map resolutions!")  # pragma: no cover
         return acceptances
 
     def prepare_toys(self, add_gw_vars: list = None):

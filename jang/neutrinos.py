@@ -93,11 +93,9 @@ class Acceptance:
 
     def change_resolution(self, nside):
         if self.nside != nside:
-            if self.is_zero():
-                self.map = np.zeros(hp.nside2npix(nside))
-            else:
+            if not self.is_zero():
                 self.map = hp.pixelfunc.ud_grade(self.map, nside)
-            self.nside = nside
+                self.nside = nside
 
     def evaluate(self, ipix: int, nside: Optional[int] = None):
         if self.nside == 0:
@@ -107,18 +105,12 @@ class Acceptance:
             ipix_acc = hp.ang2pix(self.nside, *hp.pix2ang(nside, ipix))
         return self.map[ipix_acc]
 
-    def draw(self, outfile: str):  # pragma: no cover
+    def draw(self, outfile: str, log: bool = False):  # pragma: no cover
         if self.nside == 0:
             return
         plt.close("all")
-        hp.mollview(
-            self.map,
-            min=0,
-            rot=180,
-            cmap="Blues",
-            title="",
-            unit=r"Acceptance [cm$^{2}$/GeV]",
-        )
+        hp.mollview(self.map, min=None if log else 0, rot=180, cmap="Blues", title="",
+                    unit=r"Acceptance [cm$^{2}$/GeV]", norm="log" if log else None)
         hp.graticule()
         plt.savefig(outfile, dpi=300)
 
@@ -323,11 +315,9 @@ class DetectorBase(abc.ABC):
                 )
             accs.append(sample.acceptances[spectrum])
         nsides = np.array([acc.nside for acc in accs])
-        if not np.all((nsides == nsides[0])):
-            raise RuntimeError(
-                "All acceptance maps are not in the same resolution. Exiting!"
-            )
-        return accs, nsides[0]
+        if not np.all(np.isin(nsides, [0, max(nsides)])):
+            raise RuntimeError("All acceptance maps are not in the same resolution. Exiting!")
+        return accs, max(nsides)
 
     def get_nonempty_acceptance_pixels(self, spectrum: str, nside: int):
         accs, _ = self.get_acceptances(spectrum)
@@ -344,9 +334,7 @@ class DetectorBase(abc.ABC):
         nobserved = np.array([s.nobserved for s in self.samples])
         background = np.array([s.background for s in self.samples])
         if np.any(nobserved == None):
-            raise RuntimeError(
-                "[Detector] The number of observed events is not correctly filled."
-            )
+            raise RuntimeError("[Detector] The number of observed events is not correctly filled.")
         if ntoys == 0:
             return [
                 ToyResult(
@@ -355,9 +343,7 @@ class DetectorBase(abc.ABC):
                     np.ones(self.nsamples),
                 )
             ]
-        toys_acceptance = multivariate_normal.rvs(
-            mean=np.ones(self.nsamples), cov=self.error_acceptance, size=ntoys
-        )
+        toys_acceptance = multivariate_normal.rvs(mean=np.ones(self.nsamples), cov=self.error_acceptance, size=ntoys)
 
         for i in range(ntoys):
             while np.any(toys_acceptance[i] < 0):
