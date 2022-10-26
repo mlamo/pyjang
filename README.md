@@ -9,14 +9,14 @@ Joint Analysis of Neutrinos and Gravitational waves
 Installation
 ===================================================
 
-* Clone the repository: ``git clone git@git.km3net.de:mlamoureux/jang.git``
+* Clone the repository: ``git clone https://github.com/mlamo/jang.git``
 * Install the package: ``cd jang && python setup.py develop``
 
 Usage
 ===================================================
 
 * Parameters:
-   * create/use a YAML file with all needed parameters (example: ``examples/parameter_files/config_for_antares.yaml``)
+   * create/use a YAML file with all needed parameters (example: ``examples/input_files/config.yaml``)
    * load the parameters:
    ```python
    from jang.parameters import Parameters
