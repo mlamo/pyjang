@@ -82,7 +82,7 @@ class TestDetector(unittest.TestCase):
         self.assertEqual(self.d2.get_acceptances("x**-2")[0][0].evaluate(0), 0)
         with self.assertRaises(RuntimeError):
             self.d2.get_acceptances("x**-3")
-        self.d2.set_acceptances([0, 0, 0, np.zeros(hp.nside2npix(4))], "x**-2.5")
+        self.d2.set_acceptances([np.zeros(hp.nside2npix(8)), 0, 0, np.zeros(hp.nside2npix(4))], "x**-2.5")
         with self.assertRaises(RuntimeError):
             self.d2.get_acceptances("x**-2.5")
         #
