@@ -13,6 +13,10 @@ def invsqrt(var: np.ndarray):
     return 1/np.sqrt(var)
 
 
+def logflat(var: np.ndarray):
+    return 1/var
+
+
 def jeffrey_poisson(var: np.ndarray, bkg: np.ndarray, conv: np.ndarray):
     nsamples = len(bkg)
     tmp = [
@@ -32,5 +36,7 @@ def signal_parameter(var: np.ndarray, bkg: np.ndarray, conv: np.ndarray, prior_t
         return jeffrey_poisson(var, bkg, conv)
     elif prior_type == "invsqrt":
         return invsqrt(var)
+    elif prior_type == "logflat":
+        return logflat(var)
     else:
         raise RuntimeError(f"Unknown prior type {prior_type}")
