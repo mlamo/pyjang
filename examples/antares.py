@@ -41,28 +41,15 @@ def single_event(
     bkg = [BackgroundGaussian(b, 0.20 * b) for b in det_results["nbkg"]]
     antares.set_observations(det_results["nobs"], bkg)
 
-    path_to_lkl = {"flux": None, "eiso": None, "fnu": None}
-    if dbfile is not None:
-        dbdir = os.path.dirname(dbfile)
-        suffix = f"{gw.name}_{antares.name}_{pars.str_filename}"
-        for k in path_to_lkl:
-            path_to_lkl[k] = f"{dbdir}/lkls/{k}_{suffix}"
-    limit_flux = jang.limits.get_limit_flux(antares, gw, pars, path_to_lkl["flux"])
-    limit_etot = jang.limits.get_limit_etot(antares, gw, pars, path_to_lkl["eiso"])
-    limit_fnu = jang.limits.get_limit_fnu(antares, gw, pars, path_to_lkl["fnu"])
-    jang.significance.compute_prob_null_hypothesis(antares, gw, pars)
-    database_res.add_entry(
-        antares,
-        gw,
-        pars,
-        limit_flux,
-        limit_etot,
-        limit_fnu,
-        path_to_lkl["flux"],
-        path_to_lkl["eiso"],
-        path_to_lkl["fnu"],
-    )
+    def pathpost(x):
+        return f"{os.path.dirname(dbfile)}/lkls/{x}_{gw.name}_{antares.name}_{pars.str_filename}" if dbfile is not None else None
+    limit_flux = jang.limits.get_limit_flux(antares, gw, pars, pathpost("flux"))
+    limit_etot = jang.limits.get_limit_etot(antares, gw, pars, pathpost("eiso"))
+    limit_fnu = jang.limits.get_limit_fnu(antares, gw, pars, pathpost("fnu"))
 
+    jang.significance.compute_prob_null_hypothesis(antares, gw, pars)
+
+    database_res.add_entry(antares, gw, pars, limit_flux, limit_etot, limit_fnu, pathpost("flux"), pathpost("eiso"), pathpost("fnu"))
     if dbfile is not None:
         database_res.save()
 
@@ -76,7 +63,7 @@ if __name__ == "__main__":
     npix = hp.nside2npix(8)
     detresults = {
         "nobs": [1, 0, 0, 0],
-        "nbkg": [0.5, 0., 0.3, 0.],
-        "acceptances": [np.ones(npix), np.zeros(npix), np.ones(npix), np.zeros(npix), ],
+        "nbkg": [0.5, 0.1, 0.3, 0.1],
+        "acceptances": [2*np.ones(npix), np.ones(npix), 0.5*np.ones(npix), np.ones(npix)]
     }
     single_event("GW190412", gwdb, detresults, parameters)

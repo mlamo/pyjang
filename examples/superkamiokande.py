@@ -24,6 +24,7 @@ class EffectiveAreaSK(EffectiveAreaBase):
         super().__init__(sample)
         self.filename = filename
         self.rootfile = self.rootgraphs = None
+        self.args_evaluate = ["altitude"]
         self.read()
 
     def read(self):
@@ -35,27 +36,16 @@ class EffectiveAreaSK(EffectiveAreaBase):
             if self.rootfile.GetListOfKeys().Contains(gname):
                 self.rootgraphs.append(self.rootfile.Get(gname))
 
-    def evaluate(
-        self, energy: Union[float, Iterable], altitude: float, azimuth: float
-    ) -> Union[float, np.ndarray]:
+    def evaluate(self, energy: Union[float, Iterable], altitude: float) -> Union[float, np.ndarray]:
         if isinstance(energy, Iterable):
             aeff = np.zeros_like(energy)
             for i, x in enumerate(np.log10(energy)):
-                aeff[i] = np.sum(
-                    [r.Interpolate(x, np.pi / 2 - altitude) for r in self.rootgraphs]
-                )
+                aeff[i] = np.sum([r.Interpolate(x, np.pi / 2 - altitude) for r in self.rootgraphs])
             return aeff
-        return np.sum(
-            [
-                r.Interpolate(np.log10(energy), np.pi / 2 - altitude)
-                for r in self.rootgraphs
-            ]
-        )
+        return np.sum([r.Interpolate(np.log10(energy), np.pi / 2 - altitude) for r in self.rootgraphs])
 
 
-def single_event(
-    gwname: str, gwdbfile: str, det_results: dict, pars: Parameters, dbfile: str = None
-):
+def single_event(gwname: str, gwdbfile: str, det_results: dict, pars: Parameters, dbfile: str = None):
     """Compute the limits for a given GW event and using the detector results stored in dictionary.
     If dbfile is provided, the obtained results are stored in a database at this path.
 
@@ -82,27 +72,15 @@ def single_event(
     bkg = [BackgroundFixed(b) for b in det_results["nbkg"]]
     sk.set_observations(det_results["nobs"], bkg)
 
-    path_to_lkl = {"flux": None, "eiso": None, "fnu": None}
-    if dbfile is not None:
-        dbdir = os.path.dirname(dbfile)
-        suffix = f"{gw.name}_{sk.name}_{pars.str_filename}"
-        for k in path_to_lkl:
-            path_to_lkl[k] = f"{dbdir}/lkls/{k}_{suffix}"
-    limit_flux = jang.limits.get_limit_flux(sk, gw, pars, path_to_lkl["flux"])
-    limit_etot = jang.limits.get_limit_etot(sk, gw, pars, path_to_lkl["eiso"])
-    limit_fnu = jang.limits.get_limit_fnu(sk, gw, pars, path_to_lkl["fnu"])
-    database_res.add_entry(
-        sk,
-        gw,
-        pars,
-        limit_flux,
-        limit_etot,
-        limit_fnu,
-        path_to_lkl["flux"],
-        path_to_lkl["eiso"],
-        path_to_lkl["fnu"],
-    )
+    def pathpost(x):
+        return f"{os.path.dirname(dbfile)}/lkls/{x}_{gw.name}_{sk.name}_{pars.str_filename}" if dbfile is not None else None
+    limit_flux = jang.limits.get_limit_flux(sk, gw, pars, pathpost("flux"))
+    limit_etot = jang.limits.get_limit_etot(sk, gw, pars, pathpost("eiso"))
+    limit_fnu = jang.limits.get_limit_fnu(sk, gw, pars, pathpost("fnu"))
 
+    jang.significance.compute_prob_null_hypothesis(sk, gw, pars)
+
+    database_res.add_entry(sk, gw, pars, limit_flux, limit_etot, limit_fnu, pathpost("flux"), pathpost("eiso"), pathpost("fnu"))
     if dbfile is not None:
         database_res.save()
 

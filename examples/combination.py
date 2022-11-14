@@ -16,23 +16,14 @@ from jang.neutrinos import BackgroundFixed, Detector, SuperDetector
 from examples.superkamiokande import EffectiveAreaSK
 
 
-def single_event(
-    gwname: str,
-    gwdbfile: str,
-    ant_results: dict,
-    sk_results: dict,
-    pars: Parameters,
-    dbfile: str = None,
-):
+def single_event(gwname: str, gwdbfile: str, ant_results: dict, sk_results: dict, pars: Parameters, dbfile: str = None):
 
     database_gw = jang.gw.Database(gwdbfile)
     database_res = jang.results.Database(dbfile)
 
     antares = Detector("examples/input_files/detector_antares.yaml")
     sk = Detector("examples/input_files/detector_superk.yaml")
-    effarea_sk = [
-        EffectiveAreaSK(filename=sk_results["effarea"], sample=s) for s in sk.samples
-    ]
+    effarea_sk = [EffectiveAreaSK(filename=sk_results["effarea"], sample=s) for s in sk.samples]
 
     # Combination
     ant_sk = SuperDetector("ANTARES + Super-Kamiokande")
@@ -57,9 +48,7 @@ def single_event(
     limit_flux = jang.limits.get_limit_flux(ant_sk, gw, pars)
     limit_etot = jang.limits.get_limit_etot(ant_sk, gw, pars)
     limit_fnu = jang.limits.get_limit_fnu(ant_sk, gw, pars)
-    database_res.add_entry(
-        ant_sk, gw, pars, limit_flux, limit_etot, limit_fnu, None, None, None
-    )
+    database_res.add_entry(ant_sk, gw, pars, limit_flux, limit_etot, limit_fnu)
 
     if dbfile is not None:
         database_res.save()

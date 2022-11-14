@@ -9,6 +9,10 @@ def flat_nsig(var: np.ndarray, conv: np.ndarray):
     return np.ones_like(var) * np.sum(conv)
 
 
+def invsqrt(var: np.ndarray):
+    return 1/np.sqrt(var)
+
+
 def jeffrey_poisson(var: np.ndarray, bkg: np.ndarray, conv: np.ndarray):
     nsamples = len(bkg)
     tmp = [
@@ -26,5 +30,7 @@ def signal_parameter(var: np.ndarray, bkg: np.ndarray, conv: np.ndarray, prior_t
         return flat_nsig(var, conv)
     elif prior_type == "jeffrey":
         return jeffrey_poisson(var, bkg, conv)
+    elif prior_type == "invsqrt":
+        return invsqrt(var)
     else:
         raise RuntimeError(f"Unknown prior type {prior_type}")

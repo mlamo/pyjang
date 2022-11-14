@@ -17,9 +17,7 @@ import jang.stats.posteriors
 matplotlib.use("Agg")
 
 
-def plot_posterior(
-    x: np.ndarray, y: np.ndarray, limit: float, xlabel: str, outfile: str
-):
+def plot_posterior(x: np.ndarray, y: np.ndarray, limit: float, xlabel: str, outfile: str):
 
     plt.close("all")
     plt.plot(x, y)
@@ -31,12 +29,7 @@ def plot_posterior(
     plt.savefig(outfile, dpi=300)
 
 
-def get_limit_flux(
-    detector: DetectorBase,
-    gw: GW,
-    parameters: Parameters,
-    outfile: Optional[str] = None,
-) -> float:
+def get_limit_flux(detector: DetectorBase, gw: GW, parameters: Parameters, outfile: Optional[str] = None) -> float:
     """Return 90% upper limit on flux normalization (dn/dE = norm*{parameters.spectrum}).
     The related posterior will be saved in "{outfile}.[npy/png]" if provided."""
 
@@ -59,12 +52,7 @@ def get_limit_flux(
     return limit
 
 
-def get_limit_etot(
-    detector: DetectorBase,
-    gw: GW,
-    parameters: Parameters,
-    outfile: Optional[str] = None,
-) -> float:
+def get_limit_etot(detector: DetectorBase, gw: GW, parameters: Parameters, outfile: Optional[str] = None) -> float:
     """Return 90% upper limit on the total energy emitted in neutrinos (all-flavours) E(tot) [in erg].
     The related posterior will be saved in "{outfile}.[npy/png]" if provided."""
 
@@ -88,12 +76,7 @@ def get_limit_etot(
     return limit
 
 
-def get_limit_fnu(
-    detector: DetectorBase,
-    gw: GW,
-    parameters: Parameters,
-    outfile: Optional[str] = None,
-) -> float:
+def get_limit_fnu(detector: DetectorBase, gw: GW, parameters: Parameters, outfile: Optional[str] = None) -> float:
     """Return 90% upper limit on fnu=E(tot)/E(radiated).
     The related posterior will be saved in "{outfile}.[npy/png]" if provided."""
 
@@ -117,13 +100,7 @@ def get_limit_fnu(
     return limit
 
 
-def get_limit_flux_with_othervars(
-    detector: DetectorBase,
-    gw: GW,
-    parameters: Parameters,
-    other_variables: List[jang.stats.PosteriorVariable],
-    outfile: Optional[str] = None,
-) -> float:
+def get_limit_flux_with_othervars(detector: DetectorBase, gw: GW, parameters: Parameters, other_variables: List[jang.stats.PosteriorVariable], outfile: Optional[str] = None) -> float:
     """Return 90% upper limit on flux normalization (dn/dE = norm*{parameters.spectrum}).
     The related likelihood will be saved in "{outfile}.[npy/png]" if provided."""
 
