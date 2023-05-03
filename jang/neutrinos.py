@@ -99,7 +99,7 @@ class Acceptance:
                 self.map = self.map * np.ones(hp.nside2npix(nside))
             else:
                 self.map = hp.pixelfunc.ud_grade(self.map, nside)
-            self.nside = nside
+                self.nside = nside
 
     def evaluate(self, ipix: int, nside: Optional[int] = None):
         if self.nside == 0:
@@ -109,18 +109,12 @@ class Acceptance:
             ipix_acc = hp.ang2pix(self.nside, *hp.pix2ang(nside, ipix))
         return self.map[ipix_acc]
 
-    def draw(self, outfile: str):  # pragma: no cover
+    def draw(self, outfile: str, log: bool = False):  # pragma: no cover
         if self.nside == 0:
             return
         plt.close("all")
-        hp.mollview(
-            self.map,
-            min=0,
-            rot=180,
-            cmap="Blues",
-            title="",
-            unit=r"Acceptance [cm$^{2}$/GeV]",
-        )
+        hp.mollview(self.map, min=None if log else 0, rot=180, cmap="Blues", title="",
+                    unit=r"Acceptance [cm$^{2}$/GeV]", norm="log" if log else None)
         hp.graticule()
         plt.savefig(outfile, dpi=300)
 
@@ -325,11 +319,9 @@ class DetectorBase(abc.ABC):
                 )
             accs.append(sample.acceptances[spectrum])
         nsides = np.array([acc.nside for acc in accs])
-        if not np.all((nsides == nsides[0])):
-            raise RuntimeError(
-                "All acceptance maps are not in the same resolution. Exiting!"
-            )
-        return accs, nsides[0]
+        if not np.all(np.isin(nsides, [0, max(nsides)])):
+            raise RuntimeError("All acceptance maps are not in the same resolution. Exiting!")
+        return accs, max(nsides)
 
     def get_nonempty_acceptance_pixels(self, spectrum: str, nside: int):
         accs, _ = self.get_acceptances(spectrum)

@@ -76,7 +76,7 @@ class Parameters:
         if len(spl) == 1 and spl[0] == "bestfit":
             return 0
         if len(spl) == 1 and spl[0] == "fullsky":
-            return 1
+            return None
         return None
 
     def get_searchregion_iszeroincluded(self) -> bool:

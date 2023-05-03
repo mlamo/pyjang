@@ -127,6 +127,10 @@ class GWFits:
         toys = [ToyGW({k: v[i] for k, v in toys.items()}) for i in range(ntoys)]
         return toys
 
+    def get_area_region(self, contained_prob: float, degrees: bool = True):
+        region = self.get_signal_region(nside=128, contained_prob=contained_prob)
+        return len(region) * hp.nside2pixarea(128, degrees=degrees)
+
 
 class GWSamples:
     def __init__(self, file):
