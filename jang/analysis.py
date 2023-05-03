@@ -27,9 +27,7 @@ class Analysis:
         if self._parameters.nside is None:
             self._parameters.nside = nside  # pragma: no cover
         elif self._parameters.nside != nside:
-            raise RuntimeError(
-                "Something went wrong with map resolutions!"
-            )  # pragma: no cover
+            raise RuntimeError("Something went wrong with map resolutions!")  # pragma: no cover
         return acceptances
 
     def prepare_toys(self, add_gw_vars: list = None):
@@ -38,7 +36,11 @@ class Analysis:
         _ = self.acceptances
         # GW toys
         region_restricted = get_search_region(self._detector, self._gw, self._parameters)
-        self.toys_gw = self._gw.samples.prepare_toys(*self._gwvars, nside=self._parameters.nside, region_restriction=region_restricted)
+        if self._gw.samples:
+            self.toys_gw = self._gw.samples.prepare_toys(*self._gwvars, nside=self._parameters.nside, region_restriction=region_restricted)
+        else:
+            self.toys_gw = self._gw.fits.prepare_toys(nside=self._parameters.nside, region_restriction=region_restricted)
+            
         # Detector toys
         if self._parameters.apply_det_systematics:
             self.toys_det = self._detector.prepare_toys(self._parameters.ntoys_det_systematics)

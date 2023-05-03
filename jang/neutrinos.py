@@ -67,15 +67,17 @@ def infer_uncertainties(
 class Acceptance:
     """Class to handle detector acceptance for a given sample, spectrum and neutrino flavour."""
 
-    def __init__(self, rinput: Union[np.ndarray, str]):
-        self.map = None
-        self.nside = 0
+    def __init__(self, rinput: Union[np.ndarray, float, int, str]):
         if isinstance(rinput, np.ndarray):
             self.map = rinput
             self.nside = hp.npix2nside(len(self.map))
+        elif isinstance(rinput, float) or isinstance(rinput, int):
+            self.map = rinput
+            self.nside = 0
         elif isinstance(rinput, str) and rinput.endswith(".npy"):  # pragma: no cover
             self.from_npy(rinput)
-        elif rinput == 0:
+        else:
+            logging.getLogger("jang").warning("Acceptance is set to 0!")
             self.map = 0
             self.nside = 0
 
@@ -94,7 +96,7 @@ class Acceptance:
     def change_resolution(self, nside):
         if self.nside != nside:
             if self.is_zero():
-                self.map = np.zeros(hp.nside2npix(nside))
+                self.map = self.map * np.ones(hp.nside2npix(nside))
             else:
                 self.map = hp.pixelfunc.ud_grade(self.map, nside)
             self.nside = nside

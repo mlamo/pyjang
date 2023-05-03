@@ -40,7 +40,7 @@ class GW:
             self.set_fits(path_to_fits)
         if path_to_samples is not None:
             self.set_samples(path_to_samples)
-        self.set_parameters(pars)
+            self.set_parameters(pars)
 
     def set_fits(self, file: str):
         """Set GWFits object."""
@@ -88,9 +88,7 @@ class GWFits:
         tmax, pmax = hp.pix2ang(nside, np.argmax(map))
         return pmax, np.pi/2 - tmax
 
-    def get_signal_region(
-        self, nside: int, contained_prob: float = 0.90
-    ) -> np.ndarray:
+    def get_signal_region(self, nside: int, contained_prob: float = 0.90) -> np.ndarray:
         """Get the region containing a given probability of the skymap, for a given resolution."""
         skymap = self.get_skymap(nside)
         npix = hp.get_map_size(skymap)
@@ -106,6 +104,28 @@ class GWFits:
         iSortMax = np.argwhere(sortedCumulProba > contained_prob)[0][0]
         pixReg = iSort[:iSortMax+1]
         return pixReg
+    
+    def prepare_toys(self, nside: int, region_restriction: Optional[np.ndarray] = None) -> dict:
+        """Prepare GW toys with an eventual restriction to the considered sky region. 
+        /!\ Can only cope with ra,dec variables"""
+
+        skymap = self.get_skymap(nside)
+        
+        toys = {}
+        toys["ipix"] = np.random.choice(len(skymap), size=1000, p=skymap/np.sum(skymap))
+        toys["dec"], toys["ra"] = hp.pix2ang(nside, toys["ipix"])
+        toys["dec"] = np.pi/2 - toys["dec"]
+        
+        # dtypes = [("ra", "f8"), ("dec", "f8"), ("ipix", "i8")]
+
+        if region_restriction is not None:
+            to_keep = [i for i, pix in enumerate(toys["ipix"]) if pix in region_restriction]
+            for k in toys.keys():
+                toys[k] = toys[k][to_keep]
+
+        ntoys = len(toys["ipix"])
+        toys = [ToyGW({k: v[i] for k, v in toys.items()}) for i in range(ntoys)]
+        return toys
 
 
 class GWSamples:
@@ -191,9 +211,7 @@ class GWSamples:
             return "NSBH"  # pragma: no cover
         return "BNS"  # pragma: no cover
 
-    def prepare_toys(
-        self, *variables, nside: int, region_restriction: Optional[np.ndarray] = None
-    ) -> dict:
+    def prepare_toys(self, *variables, nside: int, region_restriction: Optional[np.ndarray] = None) -> dict:
         """Prepare GW toys with an eventual restriction to the considered sky region."""
         toys = self.get_variables(*variables)
         dtypes = [(v, "f8") for v in variables]
@@ -201,9 +219,7 @@ class GWSamples:
         dtypes += [("ipix", "i8")]
 
         if region_restriction is not None:
-            to_keep = [
-                i for i, pix in enumerate(toys["ipix"]) if pix in region_restriction
-            ]
+            to_keep = [i for i, pix in enumerate(toys["ipix"]) if pix in region_restriction]
             for k in toys.keys():
                 toys[k] = toys[k][to_keep]
 
