@@ -40,7 +40,7 @@ class GW:
             self.set_fits(path_to_fits)
         if path_to_samples is not None:
             self.set_samples(path_to_samples)
-        self.set_parameters(pars)
+            self.set_parameters(pars)
 
     def set_fits(self, file: str):
         """Set GWFits object."""
@@ -104,6 +104,28 @@ class GWFits:
         iSortMax = np.argwhere(sortedCumulProba > contained_prob)[0][0]
         pixReg = iSort[:iSortMax+1]
         return pixReg
+    
+    def prepare_toys(self, nside: int, region_restriction: Optional[np.ndarray] = None) -> dict:
+        """Prepare GW toys with an eventual restriction to the considered sky region. 
+        /!\ Can only cope with ra,dec variables"""
+
+        skymap = self.get_skymap(nside)
+        
+        toys = {}
+        toys["ipix"] = np.random.choice(len(skymap), size=1000, p=skymap/np.sum(skymap))
+        toys["dec"], toys["ra"] = hp.pix2ang(nside, toys["ipix"])
+        toys["dec"] = np.pi/2 - toys["dec"]
+        
+        # dtypes = [("ra", "f8"), ("dec", "f8"), ("ipix", "i8")]
+
+        if region_restriction is not None:
+            to_keep = [i for i, pix in enumerate(toys["ipix"]) if pix in region_restriction]
+            for k in toys.keys():
+                toys[k] = toys[k][to_keep]
+
+        ntoys = len(toys["ipix"])
+        toys = [ToyGW({k: v[i] for k, v in toys.items()}) for i in range(ntoys)]
+        return toys
 
     def get_area_region(self, contained_prob: float, degrees: bool = True):
         region = self.get_signal_region(nside=128, contained_prob=contained_prob)
@@ -193,9 +215,7 @@ class GWSamples:
             return "NSBH"  # pragma: no cover
         return "BNS"  # pragma: no cover
 
-    def prepare_toys(
-        self, *variables, nside: int, region_restriction: Optional[np.ndarray] = None
-    ) -> dict:
+    def prepare_toys(self, *variables, nside: int, region_restriction: Optional[np.ndarray] = None) -> dict:
         """Prepare GW toys with an eventual restriction to the considered sky region."""
         toys = self.get_variables(*variables)
         dtypes = [(v, "f8") for v in variables]
@@ -203,9 +223,7 @@ class GWSamples:
         dtypes += [("ipix", "i8")]
 
         if region_restriction is not None:
-            to_keep = [
-                i for i, pix in enumerate(toys["ipix"]) if pix in region_restriction
-            ]
+            to_keep = [i for i, pix in enumerate(toys["ipix"]) if pix in region_restriction]
             for k in toys.keys():
                 toys[k] = toys[k][to_keep]
 
@@ -306,15 +324,14 @@ class Database:
         self.db.to_csv(outfile)
 
 
-def get_search_region(
-    detector: jang.neutrinos.Detector, gw: GW, parameters: jang.parameters.Parameters
-):
+def get_search_region(detector: jang.neutrinos.Detector, gw: GW, pars: jang.parameters.Parameters):
 
-    region = gw.fits.get_signal_region(parameters.nside, parameters.get_searchregion_gwfraction())
-    if not parameters.get_searchregion_iszeroincluded():
-        region_nonzero = detector.get_nonempty_acceptance_pixels(
-            parameters.spectrum, parameters.nside
-        )
+    region = gw.fits.get_signal_region(pars.nside, pars.get_searchregion_gwfraction())
+    if not pars.get_searchregion_iszeroincluded():
+        region_nonzero = detector.get_nonempty_acceptance_pixels(pars.spectrum, pars.nside)
         region = np.intersect1d(region, region_nonzero)
+    
+    if len(region) == 0:
+        raise RuntimeError("[gw] The search region has been reduced to empty. Please check 'search_region' parameter.")
 
     return region

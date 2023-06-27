@@ -36,7 +36,11 @@ class Analysis:
         _ = self.acceptances
         # GW toys
         region_restricted = get_search_region(self._detector, self._gw, self._parameters)
-        self.toys_gw = self._gw.samples.prepare_toys(*self._gwvars, nside=self._parameters.nside, region_restriction=region_restricted)
+        if self._gw.samples:
+            self.toys_gw = self._gw.samples.prepare_toys(*self._gwvars, nside=self._parameters.nside, region_restriction=region_restricted)
+        else:
+            self.toys_gw = self._gw.fits.prepare_toys(nside=self._parameters.nside, region_restriction=region_restricted)
+            
         # Detector toys
         if self._parameters.apply_det_systematics:
             self.toys_det = self._detector.prepare_toys(self._parameters.ntoys_det_systematics)

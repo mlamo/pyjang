@@ -217,6 +217,8 @@ class Database:
         plt.ylabel(r"$E^{90\%}_{tot,\nu}$ [erg]", fontsize=16)
         plt.xscale("log")
         plt.yscale("log")
+        plt.xticks(fontsize=12)
+        plt.yticks(fontsize=12)
         plt.tight_layout()
         plt.savefig(outfile, dpi=300)
 
@@ -259,6 +261,8 @@ class Database:
         plt.ylabel(r"$E^{90\%}_{tot,\nu}/E_{radiated}$", fontsize=16)
         plt.xscale("log")
         plt.yscale("log")
+        plt.xticks(fontsize=12)
+        plt.yticks(fontsize=12)
         plt.tight_layout()
         plt.savefig(outfile, dpi=300)
 
