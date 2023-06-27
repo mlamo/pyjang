@@ -115,8 +115,6 @@ class GWFits:
         toys["ipix"] = np.random.choice(len(skymap), size=1000, p=skymap/np.sum(skymap))
         toys["dec"], toys["ra"] = hp.pix2ang(nside, toys["ipix"])
         toys["dec"] = np.pi/2 - toys["dec"]
-        
-        # dtypes = [("ra", "f8"), ("dec", "f8"), ("ipix", "i8")]
 
         if region_restriction is not None:
             to_keep = [i for i, pix in enumerate(toys["ipix"]) if pix in region_restriction]
@@ -126,6 +124,12 @@ class GWFits:
         ntoys = len(toys["ipix"])
         toys = [ToyGW({k: v[i] for k, v in toys.items()}) for i in range(ntoys)]
         return toys
+    
+    def prepare_toy(self, nside: int, fixed_pixel: int):
+        toy = {"ipix": fixed_pixel}
+        toy["dec"], toy["ra"] = hp.pix2ang(nside, toy["ipix"])
+        toy["dec"] = np.pi/2 - toy["dec"]
+        return [ToyGW(toy)]
 
     def get_area_region(self, contained_prob: float, degrees: bool = True):
         region = self.get_signal_region(nside=128, contained_prob=contained_prob)

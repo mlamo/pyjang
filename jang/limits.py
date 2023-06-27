@@ -1,6 +1,7 @@
 """Compute upper limits for any given Detector or SuperDetector (combination of Detector) and selected model, using the likelihoods."""
 
 import copy
+import healpy as hp
 import logging
 import matplotlib
 import matplotlib.pyplot as plt
@@ -8,7 +9,7 @@ import numpy as np
 import os
 from typing import List, Optional
 
-from jang.gw import GW
+from jang.gw import GW, get_search_region
 from jang.neutrinos import DetectorBase
 from jang.parameters import Parameters
 import jang.stats
@@ -143,3 +144,38 @@ def get_limit_flux_with_othervars(detector: DetectorBase, gw: GW, parameters: Pa
         limit,
     )
     return limit
+
+
+def get_limitmap_flux(detector: DetectorBase, gw: GW, parameters: Parameters, outfile: Optional[str] = None, log: bool = False) -> float:
+    """Return map 90% upper limit on flux normalization (dn/dE = norm*{parameters.spectrum}), 
+    without marginalizing over the source localization."""
+
+    variables = [jang.stats.PosteriorVariable("flux", parameters.range_flux[0:2], parameters.range_flux[2], log=True)]
+
+    region = get_search_region(detector, gw, parameters)
+    limits = np.nan * np.ones(hp.nside2npix(parameters.nside))
+    for ipix in region:
+        x, y = jang.stats.posteriors.compute_flux_posterior(variables, detector, gw, parameters, fixed_gwpixel=ipix)
+        x, y = jang.stats.normalize(x[0], y)
+        limits[ipix] = jang.stats.compute_upperlimit_from_x_y(x, y)
+        
+    if outfile is not None:
+        os.makedirs(os.path.dirname(outfile), exist_ok=True)
+        np.save(outfile+".npy", limits)
+        plt.close("all")
+        print(np.nanmin(limits), np.nanmax(limits))
+        int_min, power_min = np.floor(10*float(f"{np.nanmin(limits):.3e}".split('e')[0])), int(f"{np.nanmin(limits):.3e}".split('e')[1])
+        int_max, power_max = np.ceil(10*float(f"{np.nanmax(limits):.3e}".split('e')[0])), int(f"{np.nanmax(limits):.3e}".split('e')[1])
+        ax_min, ax_max = int_min * 10**(power_min-1), int_max * 10**(power_max-1)
+        if log:
+            hp.mollview(np.log10(limits), cmap="Blues", unit=r"$\log_{10}$(limit on flux [GeV/cm$^2$])", rot=180, title="", min=np.log10(ax_min), max=np.log10(ax_max), format="%.2f")
+        else:
+            hp.mollview(limits, cmap="Blues", unit=r"Limit on flux [GeV/cm$^2$]", rot=180, title="", min=ax_min, max=ax_max)
+        hp.graticule()
+        try:
+            plt.gcf().get_children()[2].get_children()[3].set_fontsize(12)
+        except:
+            pass
+        plt.savefig(outfile+".png", dpi=300)
+        
+    return limits

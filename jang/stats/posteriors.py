@@ -12,7 +12,7 @@ import jang.stats.likelihoods as lkl
 import jang.stats.priors as prior
 
 
-def compute_flux_posterior(variables: List[PosteriorVariable], detector: Detector, gw: GW, parameters: Parameters) -> Tuple[np.ndarray, np.ndarray]:
+def compute_flux_posterior(variables: List[PosteriorVariable], detector: Detector, gw: GW, parameters: Parameters, fixed_gwpixel: int = None) -> Tuple[np.ndarray, np.ndarray]:
     """Compute the posterior as a function of all-flavour neutrino flux at Earth. The list of 'variables' **SHOULD** contain a PosteriorVariable with name 'flux'.
 
     Args:
@@ -20,6 +20,7 @@ def compute_flux_posterior(variables: List[PosteriorVariable], detector: Detecto
         detector (Detector): holds the nominal results
         gw (GW): holds the gravitational wave information
         parameters (Parameters): holds the needed parameters (skymap resolution to be used, neutrino spectrum and integration range...)
+        fixed_gwpixel (int): probe only the direction given by this pixel id (for resolution=parameters.nside)
 
     Returns:
         np.ndarray: array of the variable flux
@@ -33,6 +34,8 @@ def compute_flux_posterior(variables: List[PosteriorVariable], detector: Detecto
     arr_vars = {var.name: arr_vars[i] for i, var in enumerate(variables)}
     arr_vars[0] = arr_vars.pop('flux')
     arr_post = np.zeros_like(arr_vars[0])
+    
+    ana.prepare_toys(fixed_gwpixel=fixed_gwpixel)
 
     for toy in ana.toys:
         phi_to_nsig = ana.phi_to_nsig(toy)

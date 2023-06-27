@@ -30,13 +30,15 @@ class Analysis:
             raise RuntimeError("Something went wrong with map resolutions!")  # pragma: no cover
         return acceptances
 
-    def prepare_toys(self, add_gw_vars: list = None):
+    def prepare_toys(self, add_gw_vars: list = None, fixed_gwpixel: int = None):
         if add_gw_vars is not None:
             self.add_gw_variables(*add_gw_vars)
         _ = self.acceptances
         # GW toys
         region_restricted = get_search_region(self._detector, self._gw, self._parameters)
-        if self._gw.samples:
+        if fixed_gwpixel is not None:
+            self.toys_gw = self._gw.fits.prepare_toy(nside=self._parameters.nside, fixed_pixel=fixed_gwpixel)
+        elif self._gw.samples:
             self.toys_gw = self._gw.samples.prepare_toys(*self._gwvars, nside=self._parameters.nside, region_restriction=region_restricted)
         else:
             self.toys_gw = self._gw.fits.prepare_toys(nside=self._parameters.nside, region_restriction=region_restricted)
