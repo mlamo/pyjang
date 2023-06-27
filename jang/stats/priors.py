@@ -20,7 +20,7 @@ def logflat(var: np.ndarray):
 def jeffrey_poisson(var: np.ndarray, bkg: np.ndarray, conv: np.ndarray):
     nsamples = len(bkg)
     tmp = [
-        conv[i] ** 2 / (conv[i] * var + bkg[i]) if conv[i] > 0 else 0
+        conv[i] ** 2 / (conv[i] * var + bkg[i]) if conv[i] > 0 else np.zeros_like(var)
         for i in range(nsamples)
     ]
     return np.sqrt(np.sum(tmp, axis=0))
