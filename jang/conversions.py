@@ -67,7 +67,7 @@ class JetVonMises(JetModelBase):
 
     def __repr__(self):
         return "VonMises,%.1f deg%s" % (
-            self.jet_opening,
+            np.rad2deg(self.jet_opening),
             ",w/counter" if self.with_counter else "",
         )
 

@@ -167,18 +167,18 @@ class BackgroundGaussian(Background):
 
 
 class BackgroundPoisson(Background):
-    def __init__(self, Noff: int, nregions: int):
-        self.Noff, self.nregions = Noff, nregions
+    def __init__(self, Noff: int, alpha_offon: int):
+        self.Noff, self.alpha_offon = Noff, alpha_offon
 
     def prepare_toys(self, ntoys: int):
-        return gamma.rvs(self.Noff + 1, scale=1 / self.nregions, size=ntoys)
+        return gamma.rvs(self.Noff + 1, scale=1 / self.alpha_offon, size=ntoys)
 
     @property
     def nominal(self):
-        return self.Noff / self.nregions
+        return self.Noff / self.alpha_offon
 
     def __repr__(self):
-        return f"{self.nominal:.2e} = {self.Noff:d}/{self.nregions:d}"
+        return f"{self.nominal:.2e} = {self.Noff:d}/{self.alpha_offon:d}"
 
 
 class Event:
@@ -415,8 +415,12 @@ class Detector(DetectorBase):
             else:
                 raise RuntimeError("[Detector] Unknown format for energy range.")
             self._samples.append(smp)
-        self.error_acceptance = data["errors"]["acceptance"]
-        self.error_acceptance_corr = data["errors"]["acceptance_corr"]
+        if "errors" in data:
+            self.error_acceptance = data["errors"]["acceptance"]
+            self.error_acceptance_corr = data["errors"]["acceptance_corr"]
+        else:
+            self.error_acceptance = 0
+            self.error_acceptance_corr = 0
         self.check_errors_validity()
 
     def set_observations(self, nobserved: list, background: list):

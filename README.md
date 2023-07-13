@@ -10,7 +10,7 @@ Installation
 ===================================================
 
 * Clone the repository: ``git clone https://github.com/mlamo/jang.git``
-* Install the package: ``cd jang && python setup.py develop``
+* Install the package: ``cd jang && pip install -e .``
 
 Usage
 ===================================================
