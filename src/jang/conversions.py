@@ -10,7 +10,7 @@ from typing import List
 Mpc_to_cm = 3.0856776e24
 erg_to_GeV = 624.15
 solarmass_to_erg = 1.787e54
-second_to_day = 1/86400
+second_to_day = 1 / 86400
 
 
 class JetModelBase(metaclass=abc.ABCMeta):
@@ -48,22 +48,14 @@ class JetVonMises(JetModelBase):
     def __init__(self, jet_opening: float, with_counter: bool = False):
         super().__init__(jet_opening)
         self.with_counter = with_counter
-        self.kappa = np.float128(1 / (self.jet_opening ** 2))
+        self.kappa = np.float128(1 / (self.jet_opening**2))
 
     def etot_to_eiso(self, viewing_angle: float) -> float:
         if np.isinf(self.jet_opening):
             return 1
         if self.with_counter:
-            return (
-                self.kappa
-                * np.cosh(self.kappa * np.cos(viewing_angle))
-                / np.sinh(self.kappa)
-            )
-        return (
-            self.kappa
-            * np.exp(self.kappa * np.cos(viewing_angle))
-            / np.sinh(self.kappa)
-        )
+            return self.kappa * np.cosh(self.kappa * np.cos(viewing_angle)) / np.sinh(self.kappa)
+        return self.kappa * np.exp(self.kappa * np.cos(viewing_angle)) / np.sinh(self.kappa)
 
     def __repr__(self):
         return "VonMises,%.1f deg%s" % (
@@ -83,10 +75,7 @@ class JetRectangular(JetModelBase):
         if not 0 < self.jet_opening < np.pi:
             return 1
         if self.with_counter:
-            if (
-                viewing_angle <= self.jet_opening
-                or viewing_angle >= np.pi - self.jet_opening
-            ):
+            if viewing_angle <= self.jet_opening or viewing_angle >= np.pi - self.jet_opening:
                 return 1 / (1 - np.cos(self.jet_opening))
             return 0
         if viewing_angle <= self.jet_opening:
@@ -111,19 +100,15 @@ def list_jet_models() -> List[JetModelBase]:
     return full_list
 
 
-def phi_to_eiso(
-    energy_range: tuple, spectrum: str = "x**-2", distance: float = 1
-) -> float:
+def phi_to_eiso(energy_range: tuple, spectrum: str = "x**-2", distance: float = 1) -> float:
     """Convert from flux normalization to total isotropic energy for a given spectrum and distance."""
     distance_cm = distance * Mpc_to_cm
     f = eval("lambda y: %s * (np.exp(y))**2" % spectrum.replace("x", "np.exp(y)"))
     integration = scipy.integrate.quad(f, *np.log(energy_range), limit=100)[0]
-    return integration * (4 * np.pi * distance_cm ** 2) / erg_to_GeV
+    return integration * (4 * np.pi * distance_cm**2) / erg_to_GeV
 
 
-def eiso_to_phi(
-    energy_range: tuple, spectrum: str = "x**-2", distance: float = 1
-) -> float:
+def eiso_to_phi(energy_range: tuple, spectrum: str = "x**-2", distance: float = 1) -> float:
     """Convert from total isotropic energy to flux normalization for a given spectrum and distance."""
     return 1 / phi_to_eiso(energy_range, spectrum, distance)
 

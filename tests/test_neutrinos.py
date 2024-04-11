@@ -207,5 +207,5 @@ class TestOther(unittest.TestCase):
         t = ToyResult([0, 1], [0.5, 1.5], [1, 1])
         self.assertEqual(
             t.__str__(),
-            "ToyResult: n(observed)=[0 1], n(background)=[0.5 1.5], var(acceptance)=[1 1]",
+            "ToyResult: n(observed)=[0 1], n(background)=[0.5 1.5], var(acceptance)=[1 1], events=None",
         )

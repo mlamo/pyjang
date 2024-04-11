@@ -3,13 +3,11 @@ import itertools
 import numpy as np
 
 import jang.conversions
-from jang.gw import GW, get_search_region
-from jang.neutrinos import DetectorBase
-from jang.parameters import Parameters
+from jang.gw import get_search_region
 
 
 class Analysis:
-    def __init__(self, gw, detector, parameters):
+    def __init__(self, gw: 'GW', detector: 'DetectorBase', parameters: 'Parameters'):
         self._gw = gw
         self._detector = detector
         self._parameters = parameters
@@ -39,10 +37,14 @@ class Analysis:
         if fixed_gwpixel is not None:
             self.toys_gw = self._gw.fits.prepare_toy(nside=self._parameters.nside, fixed_pixel=fixed_gwpixel)
         elif self._gw.samples:
-            self.toys_gw = self._gw.samples.prepare_toys(*self._gwvars, nside=self._parameters.nside, region_restriction=region_restricted)
+            self.toys_gw = self._gw.samples.prepare_toys(
+                *self._gwvars, nside=self._parameters.nside, region_restriction=region_restricted
+            )
         else:
-            self.toys_gw = self._gw.fits.prepare_toys(nside=self._parameters.nside, region_restriction=region_restricted)
-            
+            self.toys_gw = self._gw.fits.prepare_toys(
+                nside=self._parameters.nside, region_restriction=region_restricted
+            )
+
         # Detector toys
         if self._parameters.apply_det_systematics:
             self.toys_det = self._detector.prepare_toys(self._parameters.ntoys_det_systematics)
@@ -57,8 +59,7 @@ class Analysis:
 
     def phi_to_nsig(self, toy: tuple):
         phi_to_nsig = [
-            acc.evaluate(toy[0].ipix, nside=self._parameters.nside)
-            for i, acc in enumerate(self.acceptances)
+            acc.evaluate(toy[0].ipix, nside=self._parameters.nside) for i, acc in enumerate(self.acceptances)
         ]
         phi_to_nsig = np.array(phi_to_nsig)
         phi_to_nsig *= toy[1].var_acceptance

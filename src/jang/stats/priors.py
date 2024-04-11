@@ -10,19 +10,16 @@ def flat_nsig(var: np.ndarray, conv: np.ndarray):
 
 
 def invsqrt(var: np.ndarray):
-    return 1/np.sqrt(var)
+    return 1 / np.sqrt(var)
 
 
 def logflat(var: np.ndarray):
-    return 1/var
+    return 1 / var
 
 
 def jeffrey_poisson(var: np.ndarray, bkg: np.ndarray, conv: np.ndarray):
     nsamples = len(bkg)
-    tmp = [
-        conv[i] ** 2 / (conv[i] * var + bkg[i]) if conv[i] > 0 else np.zeros_like(var)
-        for i in range(nsamples)
-    ]
+    tmp = [conv[i] ** 2 / (conv[i] * var + bkg[i]) if conv[i] > 0 else np.zeros_like(var) for i in range(nsamples)]
     return np.sqrt(np.sum(tmp, axis=0))
 
 

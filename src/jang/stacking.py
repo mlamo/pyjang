@@ -1,5 +1,4 @@
 import logging
-from math import floor, ceil
 import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
@@ -14,9 +13,7 @@ matplotlib.use("Agg")
 np.seterr(divide="ignore")
 
 
-def stack_events_listgw(
-    db: jang.results.Database, list_gw: list, pars: jang.parameters.Parameters
-):
+def stack_events_listgw(db: jang.results.Database, list_gw: list, pars: jang.parameters.Parameters):
 
     log = logging.getLogger("jang")
     triggers = []
@@ -125,9 +122,7 @@ def stack_events_weightedevents(
     plt.ylabel("# of pseudo-experiments")
     plt.axvline(np.median(results[:, 2]), color="red")
     if outfile is not None:
-        plt.savefig(
-            f"{os.path.splitext(outfile)[0]}_fnu{os.path.splitext(outfile)[1]}", dpi=300
-        )
+        plt.savefig(f"{os.path.splitext(outfile)[0]}_fnu{os.path.splitext(outfile)[1]}", dpi=300)
 
     return np.median(results[:, 1]), np.median(results[:, 2])
 

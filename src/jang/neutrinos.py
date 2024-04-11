@@ -1,7 +1,6 @@
 """Defining the neutrino detectors and all related objects (samples, acceptances...)."""
 
 import abc
-import copy
 import itertools
 import logging
 import os
@@ -38,9 +37,7 @@ def infer_uncertainties(
     if input_array is None:
         return None
     input_array = np.array(input_array)
-    correlation_matrix = (correlation if correlation is not None else 0) * np.ones(
-        (nsamples, nsamples)
-    )
+    correlation_matrix = (correlation if correlation is not None else 0) * np.ones((nsamples, nsamples))
     np.fill_diagonal(correlation_matrix, 1)
     # if uncertainty is a scalar (error for all samples)
     if input_array.ndim == 0:
@@ -49,19 +46,14 @@ def infer_uncertainties(
     if input_array.shape == (nsamples,):
         return np.array(
             [
-                [
-                    input_array[i] * correlation_matrix[i, j] * input_array[j]
-                    for i in range(nsamples)
-                ]
+                [input_array[i] * correlation_matrix[i, j] * input_array[j] for i in range(nsamples)]
                 for j in range(nsamples)
             ]
         )
     # if uncertainty is a covariance matrix
     if input_array.shape == (nsamples, nsamples):
         return input_array
-    raise RuntimeError(
-        "The size of uncertainty_acceptance does not match with the number of samples"
-    )
+    raise RuntimeError("The size of uncertainty_acceptance does not match with the number of samples")
 
 
 class Acceptance:
@@ -82,7 +74,7 @@ class Acceptance:
             self.nside = 0
 
     def __call__(self, ra: float, dec: float):
-        ipix = hp.ang2pix(self.nside, np.pi/2 - dec, ra)
+        ipix = hp.ang2pix(self.nside, np.pi / 2 - dec, ra)
         return self.evaluate(ipix)
 
     def is_zero(self):
@@ -113,8 +105,15 @@ class Acceptance:
         if self.nside == 0:
             return
         plt.close("all")
-        hp.mollview(self.map, min=None if log else 0, rot=180, cmap="Blues", title="",
-                    unit=r"Acceptance [cm$^{2}$/GeV]", norm="log" if log else None)
+        hp.mollview(
+            self.map,
+            min=None if log else 0,
+            rot=180,
+            cmap="Blues",
+            title="",
+            unit=r"Acceptance [cm$^{2}$/GeV]",
+            norm="log" if log else None,
+        )
         hp.graticule()
         plt.savefig(outfile, dpi=300)
 
@@ -154,9 +153,7 @@ class BackgroundGaussian(Background):
         self.b0, self.error_b = b0, error_b
 
     def prepare_toys(self, ntoys: int):
-        return truncnorm.rvs(
-            -self.b0 / self.error_b, np.inf, loc=self.b0, scale=self.error_b, size=ntoys
-        )
+        return truncnorm.rvs(-self.b0 / self.error_b, np.inf, loc=self.b0, scale=self.error_b, size=ntoys)
 
     @property
     def nominal(self):
@@ -182,13 +179,22 @@ class BackgroundPoisson(Background):
 
 
 class Event:
-    def __init__(self, dt: float = np.nan, ra: float = np.nan, dec: float = np.nan, energy: float = np.nan, sigma: float = np.nan, altitude: float = np.nan, azimuth: float = np.nan):
+    def __init__(
+        self,
+        dt: float = np.nan,
+        ra: float = np.nan,
+        dec: float = np.nan,
+        energy: float = np.nan,
+        sigma: float = np.nan,
+        altitude: float = np.nan,
+        azimuth: float = np.nan,
+    ):
         """Event is defined by:
-            - dt = t(neutrino)-t(GW) [in seconds]
-            - ra/dec = reconstructed equatorial directions [in radians]
-            - energy = reconstructed energy [in GeV]
-            - sigma = uncertainty on reconstructed direction [in radians]
-            - altitude/azimuth = reconstructed local directions [in radians]
+        - dt = t(neutrino)-t(GW) [in seconds]
+        - ra/dec = reconstructed equatorial directions [in radians]
+        - energy = reconstructed energy [in GeV]
+        - sigma = uncertainty on reconstructed direction [in radians]
+        - altitude/azimuth = reconstructed local directions [in radians]
         """
         self.dt = dt
         self.ra = ra
@@ -229,8 +235,10 @@ class Sample:
         self.energy_range = (None, None)
         self.nobserved, self.background = None, None
         self.events = None
-        self.pdfs = {"signal": {"ang": None, "ene": None, "time": None},
-                     "background": {"ang": None, "ene": None, "time": None}}
+        self.pdfs = {
+            "signal": {"ang": None, "ene": None, "time": None},
+            "background": {"ang": None, "ene": None, "time": None},
+        }
 
     def set_energy_range(self, emin: float, emax: float):
         self.energy_range = (emin, emax)
@@ -249,9 +257,15 @@ class Sample:
     def set_events(self, events: EventsList):
         self.events = events
 
-    def set_pdfs(self,
-                 sig_ang: pdf.AngularSignal = None, sig_ene: pdf.EnergySignal = None, sig_time: pdf.TimeSignal = None,
-                 bkg_ang: pdf.AngularBackground = None, bkg_ene: pdf.EnergyBackground = None, bkg_time: pdf.TimeBackground = None):
+    def set_pdfs(
+        self,
+        sig_ang: pdf.AngularSignal = None,
+        sig_ene: pdf.EnergySignal = None,
+        sig_time: pdf.TimeSignal = None,
+        bkg_ang: pdf.AngularBackground = None,
+        bkg_ene: pdf.EnergyBackground = None,
+        bkg_time: pdf.TimeBackground = None,
+    ):
         if (sig_ang is None) ^ (bkg_ang is None):
             raise RuntimeError("One of the angular PDFs is missing!")
         if (sig_ene is None) ^ (bkg_ene is None):
@@ -277,7 +291,13 @@ class Sample:
 class ToyResult:
     """Class to handle toys related to detector systematics."""
 
-    def __init__(self, nobserved: np.ndarray, nbackground: np.ndarray, var_acceptance: np.ndarray, events: Optional[List[EventsList]] = None):
+    def __init__(
+        self,
+        nobserved: np.ndarray,
+        nbackground: np.ndarray,
+        var_acceptance: np.ndarray,
+        events: Optional[List[EventsList]] = None,
+    ):
         self.nobserved = np.array(nobserved)
         self.nbackground = np.array(nbackground)
         self.var_acceptance = np.array(var_acceptance)
@@ -288,12 +308,11 @@ class ToyResult:
             self.nobserved,
             self.nbackground,
             self.var_acceptance,
-            self.events
+            self.events,
         )
 
 
 class DetectorBase(abc.ABC):
-
     """Class to handle the neutrino detector information."""
 
     def __init__(self):
@@ -313,10 +332,7 @@ class DetectorBase(abc.ABC):
         accs = []
         for sample in self.samples:
             if spectrum not in sample.acceptances:
-                raise RuntimeError(
-                    "Acceptance for spectrum %s is not available in sample %s"
-                    % (spectrum, sample.name)
-                )
+                raise RuntimeError("Acceptance for spectrum %s is not available in sample %s" % (spectrum, sample.name))
             accs.append(sample.acceptances[spectrum])
         nsides = np.array([acc.nside for acc in accs])
         if not np.all(np.isin(nsides, [0, max(nsides)])):
@@ -401,13 +417,9 @@ class Detector(DetectorBase):
         for i in range(data["nsamples"]):
             smp = Sample(
                 name=data["samples"]["names"][i],
-                shortname=data["samples"]["shortnames"][i]
-                if "shortnames" in data["samples"]
-                else None,
+                shortname=data["samples"]["shortnames"][i] if "shortnames" in data["samples"] else None,
             )
-            data["samples"]["energyrange"] = np.array(
-                data["samples"]["energyrange"], dtype=float
-            )
+            data["samples"]["energyrange"] = np.array(data["samples"]["energyrange"], dtype=float)
             if data["samples"]["energyrange"].shape == (data["nsamples"], 2):
                 smp.set_energy_range(*data["samples"]["energyrange"][i])
             elif data["samples"]["energyrange"].shape == (2,):
@@ -443,20 +455,14 @@ class Detector(DetectorBase):
         t = astropy.time.Time(jd, format="jd")
         return t.sidereal_time("apparent", longitude=self.earth_location)
 
-    def radec_to_altaz(
-        self, ra: Quantity, dec: Quantity, jd: float
-    ) -> Tuple[Quantity, Quantity]:
+    def radec_to_altaz(self, ra: Quantity, dec: Quantity, jd: float) -> Tuple[Quantity, Quantity]:
         c_eq = astropy.coordinates.SkyCoord(ra=ra, dec=dec, frame="icrs")
         c_loc = c_eq.transform_to(
-            astropy.coordinates.AltAz(
-                obstime=astropy.time.Time(jd, format="jd"), location=self.earth_location
-            )
+            astropy.coordinates.AltAz(obstime=astropy.time.Time(jd, format="jd"), location=self.earth_location)
         )
         return c_loc.alt, c_loc.az
 
-    def altaz_to_radec(
-        self, alt: Quantity, az: Quantity, jd: float
-    ) -> Tuple[Quantity, Quantity]:
+    def altaz_to_radec(self, alt: Quantity, az: Quantity, jd: float) -> Tuple[Quantity, Quantity]:
         altaz = astropy.coordinates.AltAz(
             alt=alt,
             az=az,
@@ -500,9 +506,7 @@ class SuperDetector(DetectorBase):
             return
         log.info("[SuperDetector] Detector %s is added to the SuperDetector.", det.name)
         self.detectors.append(det)
-        self.error_acceptance = block_diag(
-            *[d.error_acceptance for d in self.detectors]
-        )
+        self.error_acceptance = block_diag(*[d.error_acceptance for d in self.detectors])
 
 
 class EffectiveAreaBase:
@@ -535,15 +539,15 @@ class EffectiveAreaBase:
 
         for ipix in range(npix):
 
-            if 'altitude' in self.args_evaluate and 'azimuth' in self.args_evaluate:
-                alt, az = detector.radec_to_altaz(ra*rad, dec*rad, jd)
+            if "altitude" in self.args_evaluate and "azimuth" in self.args_evaluate:
+                alt, az = detector.radec_to_altaz(ra * rad, dec * rad, jd)
                 arg = (alt[ipix].rad, az[ipix].rad)
-            elif 'altitude' in self.args_evaluate:
-                alt, az = detector.radec_to_altaz(ra*rad, dec*rad, jd)
+            elif "altitude" in self.args_evaluate:
+                alt, az = detector.radec_to_altaz(ra * rad, dec * rad, jd)
                 arg = (alt[ipix].rad,)
-            elif 'ra' in self.args_evaluate and 'dec' in self.args_evaluate:
+            elif "ra" in self.args_evaluate and "dec" in self.args_evaluate:
                 arg = (ra[ipix], dec[ipix])
-            elif 'dec' in self.args_evaluate:
+            elif "dec" in self.args_evaluate:
                 arg = (dec[ipix],)
             else:
                 arg = ()

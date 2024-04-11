@@ -50,9 +50,7 @@ class Parameters:
                     "Mixed",
                 ]
 
-    def set_models(
-        self, spectrum: Optional[str] = None, jet: Optional[JetModelBase] = None
-    ):
+    def set_models(self, spectrum: Optional[str] = None, jet: Optional[JetModelBase] = None):
         """Set the neutrino spectrum model (format 'x**-2') and jet model."""
         if spectrum is not None:
             self.spectrum = spectrum

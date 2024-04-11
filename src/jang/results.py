@@ -21,9 +21,7 @@ matplotlib.use("Agg")
 class Database:
     """Database containing all obtained results."""
 
-    def __init__(
-        self, filepath: Optional[str] = None, db: Optional[pd.DataFrame] = None
-    ):
+    def __init__(self, filepath: Optional[str] = None, db: Optional[pd.DataFrame] = None):
         self._filepath = filepath
         self.db = db
         if filepath is not None and db is not None:
@@ -51,11 +49,7 @@ class Database:
         if isinstance(detector, Detector):
             sample_names = [s.shortname for s in detector.samples]
         elif isinstance(detector, SuperDetector):
-            sample_names = [
-                "%s/%s" % (det.name, s.shortname)
-                for det in detector.detectors
-                for s in det.samples
-            ]
+            sample_names = ["%s/%s" % (det.name, s.shortname) for det in detector.detectors for s in det.samples]
         else:
             raise TypeError("Unsupported object as detector.")
 
@@ -63,17 +57,13 @@ class Database:
         entry = {
             "Detector.name": detector.name,
             "Detector.samples": ",".join(sample_names),
-            "Detector.error_acceptance": ",".join(
-                [f"{e:.3e}" for e in np.sqrt(np.diag(detector.error_acceptance))]
-            )
-            if parameters.apply_det_systematics
-            else "",
-            "Detector.results.nobserved": ",".join(
-                [f"{s.nobserved:d}" for s in detector.samples]
+            "Detector.error_acceptance": (
+                ",".join([f"{e:.3e}" for e in np.sqrt(np.diag(detector.error_acceptance))])
+                if parameters.apply_det_systematics
+                else ""
             ),
-            "Detector.results.nbackground": ",".join(
-                [f"{s.background}" for s in detector.samples]
-            ),
+            "Detector.results.nobserved": ",".join([f"{s.nobserved:d}" for s in detector.samples]),
+            "Detector.results.nbackground": ",".join([f"{s.background}" for s in detector.samples]),
             "GW.catalog": gw.catalog,
             "GW.name": gw.name,
             "GW.mass1": gw.samples.masses[0],
@@ -82,12 +72,10 @@ class Database:
             "GW.distance_median": dist[1],
             "GW.distance_errorminus": dist[1] - dist[0],
             "GW.distance_errorplus": dist[2] - dist[1],
-            "Parameters.systematics": "on"
-            if parameters.apply_det_systematics
-            else "off",
-            "Parameters.systematics.ntoys": parameters.ntoys_det_systematics
-            if parameters.apply_det_systematics
-            else "",
+            "Parameters.systematics": "on" if parameters.apply_det_systematics else "off",
+            "Parameters.systematics.ntoys": (
+                parameters.ntoys_det_systematics if parameters.apply_det_systematics else ""
+            ),
             "Parameters.energy_range": parameters.range_energy_integration,
             "Parameters.neutrino_spectrum": parameters.spectrum,
             "Parameters.jet_model": parameters.jet.__repr__(),
@@ -134,9 +122,7 @@ class Database:
         if isinstance(jetmodel, str):
             return Database(db=self.db[self.db["Parameters.jet_model"] == jetmodel])
         else:
-            return Database(
-                db=self.db[self.db["Parameters.jet_model"] == jetmodel.__repr__()]
-            )
+            return Database(db=self.db[self.db["Parameters.jet_model"] == jetmodel.__repr__()])
 
     def select_gwtype(self, gwtype: str):
         return Database(db=self.db[self.db["GW.type"] == gwtype])
@@ -149,9 +135,7 @@ class Database:
         gwtype: Optional[str] = None,
     ):
         if det is None and spectrum is None and jetmodel is None and gwtype is None:
-            logging.getLogger("jang").info(
-                "No selection is applied, return the infiltered database."
-            )
+            logging.getLogger("jang").info("No selection is applied, return the infiltered database.")
         db = copy.copy(self)
         if det is not None:
             db = db.select_detector(det)
@@ -194,9 +178,7 @@ class Database:
                 marker="x",
             )
         else:
-            for c, col, mar, lab in zip(
-                cat["categories"], cat["colors"], cat["markers"], cat["labels"]
-            ):
+            for c, col, mar, lab in zip(cat["categories"], cat["colors"], cat["markers"], cat["labels"]):
                 db_cat = self.db[self.db[cat["column"]] == c]
                 plt.errorbar(
                     x=db_cat["GW.distance_median"],
@@ -239,9 +221,7 @@ class Database:
                 marker="x",
             )
         else:
-            for c, col, mar, lab in zip(
-                cat["categories"], cat["colors"], cat["markers"], cat["labels"]
-            ):
+            for c, col, mar, lab in zip(cat["categories"], cat["colors"], cat["markers"], cat["labels"]):
                 db_cat = self.db[self.db[cat["column"]] == c]
                 plt.errorbar(
                     x=db_cat["GW.distance_median"],
@@ -284,13 +264,9 @@ class Database:
             )
             min_flux = np.nanmin(self.db["Results.limit_flux"])
             max_flux = np.nanmax(self.db["Results.limit_flux"])
-            plt.xticks(
-                np.arange(len(names)), names, rotation=65, ha="right", fontsize=15
-            )
+            plt.xticks(np.arange(len(names)), names, rotation=65, ha="right", fontsize=15)
         else:
-            for c, col, mar, lab in zip(
-                cat["categories"], cat["colors"], cat["markers"], cat["labels"]
-            ):
+            for c, col, mar, lab in zip(cat["categories"], cat["colors"], cat["markers"], cat["labels"]):
                 db_cat = self.db[self.db[cat["column"]] == c]
                 ii = db_cat.index.values
                 plt.plot(
@@ -326,14 +302,8 @@ class Database:
     def plot_summary_observations(self, outfile: str, sample_colors: dict):
 
         names = self.db["GW.name"]
-        nbkg = [
-            [float(n.split(" ")[0]) for n in N.split(",")]
-            for N in self.db["Detector.results.nbackground"]
-        ]
-        nobs = [
-            [int(float(n.split(" ")[0])) for n in N.split(",")]
-            for N in self.db["Detector.results.nobserved"]
-        ]
+        nbkg = [[float(n.split(" ")[0]) for n in N.split(",")] for N in self.db["Detector.results.nbackground"]]
+        nobs = [[int(float(n.split(" ")[0])) for n in N.split(",")] for N in self.db["Detector.results.nobserved"]]
         ngw = len(names)
 
         samples = [S.split(",") for S in self.db["Detector.samples"]]
@@ -345,18 +315,19 @@ class Database:
         plt.figure(figsize=(16, 6))
         for smp, col in sample_colors.items():
             idxs = [S.index(smp) if smp in S else None for S in samples]
-            bkg = [
-                nbkg[j][idxs[j]] if idxs[j] is not None else np.nan for j in range(ngw)
-            ]
-            obs = [
-                nobs[j][idxs[j]] if idxs[j] is not None else np.nan for j in range(ngw)
-            ]
+            bkg = [nbkg[j][idxs[j]] if idxs[j] is not None else np.nan for j in range(ngw)]
+            obs = [nobs[j][idxs[j]] if idxs[j] is not None else np.nan for j in range(ngw)]
             plt.bar(x, bkg, width=0.85, bottom=yoffset, color=col, alpha=0.5)
             plt.plot(x, obs, marker="*", linewidth=0, color=col)
             yoffset += np.array(bkg)
 
         plt.xticks(
-            x, names, rotation=65, va="top", ha="right", fontsize=14,
+            x,
+            names,
+            rotation=65,
+            va="top",
+            ha="right",
+            fontsize=14,
         )
         plt.ylabel("Number of events")
         plt.yscale("log")

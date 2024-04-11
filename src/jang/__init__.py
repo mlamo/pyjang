@@ -1,7 +1,7 @@
 import logging
 
 
-class DisableLogger():
+class DisableLogger:
     def __enter__(self):
         logging.disable(logging.CRITICAL)
 
@@ -13,7 +13,5 @@ log = logging.getLogger("jang")
 log.setLevel(logging.DEBUG)
 logger_ch = logging.StreamHandler()
 logger_ch.setLevel(logging.DEBUG)
-logger_ch.setFormatter(
-    logging.Formatter("[%(asctime)s:%(name)s:%(levelname)s] %(message)s")
-)
+logger_ch.setFormatter(logging.Formatter("[%(asctime)s:%(name)s:%(levelname)s] %(message)s"))
 log.addHandler(logger_ch)

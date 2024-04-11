@@ -48,10 +48,10 @@ class VonMisesSignal(AngularSignal):
     def __call__(self, evt, ra_src: float, dec_src: float):
         dpsi = angular_distance(evt.ra, evt.dec, ra_src, dec_src)
         if evt.sigma > np.radians(7):
-            kappa = 1. / evt.sigma**2
-            return kappa * np.exp(kappa * np.cos(dpsi)) / (4*np.pi * np.sinh(kappa))
+            kappa = 1.0 / evt.sigma**2
+            return kappa * np.exp(kappa * np.cos(dpsi)) / (4 * np.pi * np.sinh(kappa))
         else:
-            return 0.5 / np.pi / evt.sigma**2 * np.exp(-0.5 * (dpsi/evt.sigma)**2)
+            return 0.5 / np.pi / evt.sigma**2 * np.exp(-0.5 * (dpsi / evt.sigma) ** 2)
 
 
 class EnergyBackground(PDF):
@@ -94,7 +94,7 @@ class TimeBoxSignal(PDF):
     def __call__(self, evt, t0: float = None, sigma_t: float = None):
         t0 = self.t0 if t0 is None else t0
         sigma_t = self.sigma_t if sigma_t is None else sigma_t
-        return 1/sigma_t * ((evt.dt >= t0) & (evt.dt < t0+sigma_t))
+        return 1 / sigma_t * ((evt.dt >= t0) & (evt.dt < t0 + sigma_t))
 
 
 class TimeGausSignal(PDF):
@@ -117,4 +117,4 @@ class TimeBackground(PDF):
         self.timewindow_length = timewindow_length
 
     def __call__(self, evt):
-        return 1/self.timewindow_length
+        return 1 / self.timewindow_length

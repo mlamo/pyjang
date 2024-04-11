@@ -45,9 +45,7 @@ class GW:
     def set_fits(self, file: str):
         """Set GWFits object."""
         self.fits = GWFits(file)
-        logging.getLogger(self.logger).info(
-            "[GW] Fits is loaded from the file %s", os.path.basename(file)
-        )
+        logging.getLogger(self.logger).info("[GW] Fits is loaded from the file %s", os.path.basename(file))
         self.utc = self.fits.utc
         self.jd = self.fits.jd
         self.mjd = self.fits.mjd
@@ -55,9 +53,7 @@ class GW:
     def set_samples(self, file: str):
         """Set GWSamples object."""
         self.samples = GWSamples(file)
-        logging.getLogger(self.logger).info(
-            "[GW] Samples are loaded from the file %s", os.path.basename(file)
-        )
+        logging.getLogger(self.logger).info("[GW] Samples are loaded from the file %s", os.path.basename(file))
 
     def set_parameters(self, pars: jang.parameters.Parameters):
         """Define the parameters and propagate to sub-objects."""
@@ -86,7 +82,7 @@ class GWFits:
         """Get the direction with the maximum probability for given nside."""
         map = self.get_skymap(nside)
         tmax, pmax = hp.pix2ang(nside, np.argmax(map))
-        return pmax, np.pi/2 - tmax
+        return pmax, np.pi / 2 - tmax
 
     def get_signal_region(self, nside: int, contained_prob: float = 0.90) -> np.ndarray:
         """Get the region containing a given probability of the skymap, for a given resolution."""
@@ -102,19 +98,19 @@ class GWFits:
         iSort = np.flipud(np.argsort(skymap))
         sortedCumulProba = np.cumsum(skymap[iSort])
         iSortMax = np.argwhere(sortedCumulProba > contained_prob)[0][0]
-        pixReg = iSort[:iSortMax+1]
+        pixReg = iSort[: iSortMax + 1]
         return pixReg
-    
+
     def prepare_toys(self, nside: int, region_restriction: Optional[np.ndarray] = None) -> dict:
-        """Prepare GW toys with an eventual restriction to the considered sky region. 
+        """Prepare GW toys with an eventual restriction to the considered sky region.
         /!\ Can only cope with ra,dec variables"""
 
         skymap = self.get_skymap(nside)
-        
+
         toys = {}
-        toys["ipix"] = np.random.choice(len(skymap), size=1000, p=skymap/np.sum(skymap))
+        toys["ipix"] = np.random.choice(len(skymap), size=1000, p=skymap / np.sum(skymap))
         toys["dec"], toys["ra"] = hp.pix2ang(nside, toys["ipix"])
-        toys["dec"] = np.pi/2 - toys["dec"]
+        toys["dec"] = np.pi / 2 - toys["dec"]
 
         if region_restriction is not None:
             to_keep = [i for i, pix in enumerate(toys["ipix"]) if pix in region_restriction]
@@ -124,11 +120,11 @@ class GWFits:
         ntoys = len(toys["ipix"])
         toys = [ToyGW({k: v[i] for k, v in toys.items()}) for i in range(ntoys)]
         return toys
-    
+
     def prepare_toy(self, nside: int, fixed_pixel: int):
         toy = {"ipix": fixed_pixel}
         toy["dec"], toy["ra"] = hp.pix2ang(nside, toy["ipix"])
-        toy["dec"] = np.pi/2 - toy["dec"]
+        toy["dec"] = np.pi / 2 - toy["dec"]
         return [ToyGW(toy)]
 
     def get_area_region(self, contained_prob: float, degrees: bool = True):
@@ -156,16 +152,13 @@ class GWSamples:
                 # check that radiated_energy is there
                 if (
                     "radiated_energy" in f[sample]["posterior_samples"][:].dtype.names
-                    or "radiated_energy_non_evolved"
-                    in f[sample]["posterior_samples"][:].dtype.names
+                    or "radiated_energy_non_evolved" in f[sample]["posterior_samples"][:].dtype.names
                 ):
                     self.sample_name = sample
                     break
         f.close()
         if self.sample_name is None:
-            raise RuntimeError(
-                f"Did not find a correct sample in {self.file}"
-            )  # pragma: no cover
+            raise RuntimeError(f"Did not find a correct sample in {self.file}")  # pragma: no cover
         return self.sample_name
 
     def get_variables(self, *variables) -> dict:
@@ -180,12 +173,9 @@ class GWSamples:
         for var in variables:
             if var not in variables_h5:
                 if (var + "_non_evolved") in variables_h5:  # pragma: no cover
-                    variables_corrected.append(
-                        var + "_non_evolved")  # pragma: no cover
+                    variables_corrected.append(var + "_non_evolved")  # pragma: no cover
                 else:  # pragma: no cover
-                    raise RuntimeError(
-                        f"Missing variable {var} in h5 file."
-                    )  # pragma: no cover
+                    raise RuntimeError(f"Missing variable {var} in h5 file.")  # pragma: no cover
             else:
                 variables_corrected.append(var)
         data = {}
@@ -232,8 +222,7 @@ class GWSamples:
                 toys[k] = toys[k][to_keep]
 
         ntoys = len(toys["ipix"])
-        toys = [ToyGW({k: v[i] for k, v in toys.items()})
-                for i in range(ntoys)]
+        toys = [ToyGW({k: v[i] for k, v in toys.items()}) for i in range(ntoys)]
         return toys
 
 
@@ -255,9 +244,7 @@ class Database:
             )
         elif filepath is not None:
             if not os.path.isfile(filepath):
-                logging.getLogger("jang").warning(
-                    "Input files does not exist, starting from empty database."
-                )
+                logging.getLogger("jang").warning("Input files does not exist, starting from empty database.")
             else:
                 self.db = pd.read_csv(filepath, index_col=0)
             if self.name is None:
@@ -273,8 +260,7 @@ class Database:
 
     def find_gw(self, name: str, pars: jang.parameters.Parameters):
         if name not in self.db.index:
-            raise RuntimeError(
-                "[gw.Database] Missing index %s in the database." % name)
+            raise RuntimeError("[gw.Database] Missing index %s in the database." % name)
         gw = GW(
             pars,
             name,
@@ -334,7 +320,7 @@ def get_search_region(detector: jang.neutrinos.Detector, gw: GW, pars: jang.para
     if not pars.get_searchregion_iszeroincluded():
         region_nonzero = detector.get_nonempty_acceptance_pixels(pars.spectrum, pars.nside)
         region = np.intersect1d(region, region_nonzero)
-    
+
     if len(region) == 0:
         raise RuntimeError("[gw] The search region has been reduced to empty. Please check 'search_region' parameter.")
 

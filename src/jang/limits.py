@@ -101,12 +101,19 @@ def get_limit_fnu(detector: DetectorBase, gw: GW, parameters: Parameters, outfil
     return limit
 
 
-def get_limit_flux_with_othervars(detector: DetectorBase, gw: GW, parameters: Parameters, other_variables: List[jang.stats.PosteriorVariable], outfile: Optional[str] = None) -> float:
+def get_limit_flux_with_othervars(
+    detector: DetectorBase,
+    gw: GW,
+    parameters: Parameters,
+    other_variables: List[jang.stats.PosteriorVariable],
+    outfile: Optional[str] = None,
+) -> float:
     """Return 90% upper limit on flux normalization (dn/dE = norm*{parameters.spectrum}).
     The related likelihood will be saved in "{outfile}.[npy/png]" if provided."""
 
-    variables = [jang.stats.PosteriorVariable("flux", parameters.range_fnu[0:2],
-                                              parameters.range_fnu[2], log=True)] + other_variables
+    variables = [
+        jang.stats.PosteriorVariable("flux", parameters.range_fnu[0:2], parameters.range_fnu[2], log=True)
+    ] + other_variables
     x, y = jang.stats.posteriors.compute_flux_posterior(variables, detector, gw, parameters)
 
     # add the priors on other variables
@@ -146,8 +153,10 @@ def get_limit_flux_with_othervars(detector: DetectorBase, gw: GW, parameters: Pa
     return limit
 
 
-def get_limitmap_flux(detector: DetectorBase, gw: GW, parameters: Parameters, outfile: Optional[str] = None, log: bool = False) -> float:
-    """Return map 90% upper limit on flux normalization (dn/dE = norm*{parameters.spectrum}), 
+def get_limitmap_flux(
+    detector: DetectorBase, gw: GW, parameters: Parameters, outfile: Optional[str] = None, log: bool = False
+) -> float:
+    """Return map 90% upper limit on flux normalization (dn/dE = norm*{parameters.spectrum}),
     without marginalizing over the source localization."""
 
     variables = [jang.stats.PosteriorVariable("flux", parameters.range_flux[0:2], parameters.range_flux[2], log=True)]
@@ -158,24 +167,39 @@ def get_limitmap_flux(detector: DetectorBase, gw: GW, parameters: Parameters, ou
         x, y = jang.stats.posteriors.compute_flux_posterior(variables, detector, gw, parameters, fixed_gwpixel=ipix)
         x, y = jang.stats.normalize(x[0], y)
         limits[ipix] = jang.stats.compute_upperlimit_from_x_y(x, y)
-        
+
     if outfile is not None:
         os.makedirs(os.path.dirname(outfile), exist_ok=True)
-        np.save(outfile+".npy", limits)
+        np.save(outfile + ".npy", limits)
         plt.close("all")
         print(np.nanmin(limits), np.nanmax(limits))
-        int_min, power_min = np.floor(10*float(f"{np.nanmin(limits):.3e}".split('e')[0])), int(f"{np.nanmin(limits):.3e}".split('e')[1])
-        int_max, power_max = np.ceil(10*float(f"{np.nanmax(limits):.3e}".split('e')[0])), int(f"{np.nanmax(limits):.3e}".split('e')[1])
-        ax_min, ax_max = int_min * 10**(power_min-1), int_max * 10**(power_max-1)
+        int_min, power_min = np.floor(10 * float(f"{np.nanmin(limits):.3e}".split("e")[0])), int(
+            f"{np.nanmin(limits):.3e}".split("e")[1]
+        )
+        int_max, power_max = np.ceil(10 * float(f"{np.nanmax(limits):.3e}".split("e")[0])), int(
+            f"{np.nanmax(limits):.3e}".split("e")[1]
+        )
+        ax_min, ax_max = int_min * 10 ** (power_min - 1), int_max * 10 ** (power_max - 1)
         if log:
-            hp.mollview(np.log10(limits), cmap="Blues", unit=r"$\log_{10}$(limit on flux [GeV/cm$^2$])", rot=180, title="", min=np.log10(ax_min), max=np.log10(ax_max), format="%.2f")
+            hp.mollview(
+                np.log10(limits),
+                cmap="Blues",
+                unit=r"$\log_{10}$(limit on flux [GeV/cm$^2$])",
+                rot=180,
+                title="",
+                min=np.log10(ax_min),
+                max=np.log10(ax_max),
+                format="%.2f",
+            )
         else:
-            hp.mollview(limits, cmap="Blues", unit=r"Limit on flux [GeV/cm$^2$]", rot=180, title="", min=ax_min, max=ax_max)
+            hp.mollview(
+                limits, cmap="Blues", unit=r"Limit on flux [GeV/cm$^2$]", rot=180, title="", min=ax_min, max=ax_max
+            )
         hp.graticule()
         try:
             plt.gcf().get_children()[2].get_children()[3].set_fontsize(12)
         except:
             pass
-        plt.savefig(outfile+".png", dpi=300)
-        
+        plt.savefig(outfile + ".png", dpi=300)
+
     return limits

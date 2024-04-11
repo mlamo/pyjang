@@ -1,4 +1,3 @@
-from math import factorial
 import numpy as np
 from scipy.special import gammaln
 from typing import Dict, List
@@ -9,11 +8,13 @@ from jang.neutrinos import EventsList, Sample
 def logpoisson_one_sample(nobserved: int, nbackground: float, conv: float, var: np.ndarray) -> np.ndarray:
     """Compute the likelihood Poisson(n_observed, n_background + conv * var) as a function of var."""
     nexpected = conv * var + nbackground
-    loglkl = np.where(nexpected > 0, - nexpected + nobserved * np.log(nexpected) - gammaln(nobserved + 1), -np.inf)
+    loglkl = np.where(nexpected > 0, -nexpected + nobserved * np.log(nexpected) - gammaln(nobserved + 1), -np.inf)
     return loglkl
 
 
-def poisson_several_samples(nobserved: np.ndarray, nbackground: np.ndarray, conv: np.ndarray, vars: Dict[str, np.ndarray]) -> np.ndarray:
+def poisson_several_samples(
+    nobserved: np.ndarray, nbackground: np.ndarray, conv: np.ndarray, vars: Dict[str, np.ndarray]
+) -> np.ndarray:
     """Compute the multi-sample Poisson lkl. Each argument are arrays with one entry per sample."""
     loglkl = np.zeros_like(vars[0])
     for n_obs, n_bkg, cv in zip(nobserved, nbackground, conv):
@@ -21,15 +22,22 @@ def poisson_several_samples(nobserved: np.ndarray, nbackground: np.ndarray, conv
     return np.exp(loglkl)
 
 
-def logpointsource_one_sample(nobserved: int, nbackground: float, events: EventsList,
-                              conv: float, sample: Sample, ra_src: float, dec_src: float,
-                              vars: Dict[str, np.ndarray]) -> np.ndarray:
+def logpointsource_one_sample(
+    nobserved: int,
+    nbackground: float,
+    events: EventsList,
+    conv: float,
+    sample: Sample,
+    ra_src: float,
+    dec_src: float,
+    vars: Dict[str, np.ndarray],
+) -> np.ndarray:
     if events is None:
         return logpoisson_one_sample(nobserved, nbackground, conv, vars[0])
 
     nsignal = conv * vars[0]
     nexpected = nbackground + nsignal
-    loglkl = np.where(nexpected > 0, - nexpected - gammaln(nobserved + 1), -np.inf)
+    loglkl = np.where(nexpected > 0, -nexpected - gammaln(nobserved + 1), -np.inf)
 
     has_time_vars = "t0" in vars and "sigma_t" in vars
 
@@ -46,7 +54,7 @@ def logpointsource_one_sample(nobserved: int, nbackground: float, events: Events
                 ll *= sample.pdfs[n]["ene"](evt)
             if sample.pdfs[n]["time"] is not None:
                 if n == "signal" and has_time_vars:
-                    ll *= sample.pdfs[n]["time"](evt, vars['t0'], vars['sigma_t'])
+                    ll *= sample.pdfs[n]["time"](evt, vars["t0"], vars["sigma_t"])
                 else:
                     ll *= sample.pdfs[n]["time"](evt)
             l += ll
@@ -55,9 +63,16 @@ def logpointsource_one_sample(nobserved: int, nbackground: float, events: Events
     return loglkl
 
 
-def pointsource_several_samples(nobserved: np.ndarray, nbackground: np.ndarray, events: List[EventsList],
-                                conv: np.ndarray, samples: List[Sample], ra_src: float, dec_src: float,
-                                vars: Dict[str, np.ndarray]) -> np.ndarray:
+def pointsource_several_samples(
+    nobserved: np.ndarray,
+    nbackground: np.ndarray,
+    events: List[EventsList],
+    conv: np.ndarray,
+    samples: List[Sample],
+    ra_src: float,
+    dec_src: float,
+    vars: Dict[str, np.ndarray],
+) -> np.ndarray:
     loglkl = np.zeros_like(vars[0])
     for n_obs, n_bkg, evts, cv, s in zip(nobserved, nbackground, events, conv, samples):
         loglkl += logpointsource_one_sample(n_obs, n_bkg, evts, cv, s, ra_src, dec_src, vars)

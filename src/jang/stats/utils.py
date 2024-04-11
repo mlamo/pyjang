@@ -26,9 +26,7 @@ class PosteriorVariable:
         return self.prior(x)
 
 
-def compute_upperlimit_from_x_y(
-    x_arr: np.ndarray, y_arr: np.ndarray, CL: float = 0.9
-) -> float:
+def compute_upperlimit_from_x_y(x_arr: np.ndarray, y_arr: np.ndarray, CL: float = 0.9) -> float:
     """Compute the upper limit at a confidence level CL for a given posterior y_arr=P(x_arr)."""
     if np.all(y_arr == 0):
         return np.inf
