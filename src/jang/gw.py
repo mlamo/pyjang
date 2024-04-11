@@ -103,7 +103,7 @@ class GWFits:
 
     def prepare_toys(self, nside: int, region_restriction: Optional[np.ndarray] = None) -> dict:
         """Prepare GW toys with an eventual restriction to the considered sky region.
-        /!\ Can only cope with ra,dec variables"""
+        Can only cope with ra,dec variables"""
 
         skymap = self.get_skymap(nside)
 

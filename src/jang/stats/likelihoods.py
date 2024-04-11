@@ -42,23 +42,23 @@ def logpointsource_one_sample(
     has_time_vars = "t0" in vars and "sigma_t" in vars
 
     for evt in events:
-        l = 0
+        lkl = 0
         for n in ("signal", "background"):
-            ll = locals()[f"n{n}"]
+            tmplkl = locals()[f"n{n}"]
             if sample.pdfs[n]["ang"] is not None:
                 if n == "signal":
-                    ll *= sample.pdfs[n]["ang"](evt, ra_src, dec_src)
+                    tmplkl *= sample.pdfs[n]["ang"](evt, ra_src, dec_src)
                 else:
-                    ll *= sample.pdfs[n]["ang"](evt)
+                    tmplkl *= sample.pdfs[n]["ang"](evt)
             if sample.pdfs[n]["ene"] is not None:
-                ll *= sample.pdfs[n]["ene"](evt)
+                tmplkl *= sample.pdfs[n]["ene"](evt)
             if sample.pdfs[n]["time"] is not None:
                 if n == "signal" and has_time_vars:
-                    ll *= sample.pdfs[n]["time"](evt, vars["t0"], vars["sigma_t"])
+                    tmplkl *= sample.pdfs[n]["time"](evt, vars["t0"], vars["sigma_t"])
                 else:
-                    ll *= sample.pdfs[n]["time"](evt)
-            l += ll
-        loglkl += np.log(l)
+                    tmplkl *= sample.pdfs[n]["time"](evt)
+            lkl += tmplkl
+        loglkl += np.log(lkl)
 
     return loglkl
 

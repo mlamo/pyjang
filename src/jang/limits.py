@@ -196,10 +196,6 @@ def get_limitmap_flux(
                 limits, cmap="Blues", unit=r"Limit on flux [GeV/cm$^2$]", rot=180, title="", min=ax_min, max=ax_max
             )
         hp.graticule()
-        try:
-            plt.gcf().get_children()[2].get_children()[3].set_fontsize(12)
-        except:
-            pass
         plt.savefig(outfile + ".png", dpi=300)
 
     return limits

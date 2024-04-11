@@ -20,6 +20,11 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
     "black",
+    "pytest",
+    "pytest-cov",
+    "pytest-flake8",
+    "pytest-pylint",
+    "pytest-watch",
 ]
 
 [build-system]

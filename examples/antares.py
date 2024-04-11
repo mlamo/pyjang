@@ -41,8 +41,9 @@ def single_event(
     bkg = [BackgroundGaussian(b, 0.20 * b) for b in det_results["nbkg"]]
     antares.set_observations(det_results["nobs"], bkg)
     pars.nside = antares.get_acceptances(pars.spectrum)[1]
-    
-    limitmap_flux = jang.limits.get_limitmap_flux(antares, gw, pars, "tests/test")
+
+    jang.limits.get_limitmap_flux(antares, gw, pars, "tests/test")
+
     def pathpost(x):
         return f"{os.path.dirname(dbfile)}/lkls/{x}_{gw.name}_{antares.name}_{pars.str_filename}" if dbfile is not None else None
     limit_flux = jang.limits.get_limit_flux(antares, gw, pars, pathpost("flux"))

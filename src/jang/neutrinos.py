@@ -233,7 +233,8 @@ class Sample:
         self.name = name
         self.shortname = shortname if shortname is not None else name
         self.energy_range = (None, None)
-        self.nobserved, self.background = None, None
+        self.nobserved = np.nan
+        self.background = None
         self.events = None
         self.pdfs = {
             "signal": {"ang": None, "ene": None, "time": None},
@@ -355,7 +356,7 @@ class DetectorBase(abc.ABC):
         background = np.array([s.background for s in self.samples])
         events = [s.events for s in self.samples]
 
-        if np.any(nobserved == None):
+        if np.any(np.isnan(nobserved)):
             raise RuntimeError("[Detector] The number of observed events is not correctly filled.")
 
         # if no toys

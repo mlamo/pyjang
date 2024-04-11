@@ -15,7 +15,8 @@ import jang.stats.priors as prior
 def compute_flux_posterior(
     variables: List[PosteriorVariable], detector: Detector, gw: GW, parameters: Parameters, fixed_gwpixel: int = None
 ) -> Tuple[np.ndarray, np.ndarray]:
-    """Compute the posterior as a function of all-flavour neutrino flux at Earth. The list of 'variables' **SHOULD** contain a PosteriorVariable with name 'flux'.
+    """Compute the posterior as a function of all-flavour neutrino flux at Earth.
+    The list of 'variables' **SHOULD** contain a PosteriorVariable with name 'flux'.
 
     Args:
         variables (List[PosteriorVariable]): list of variables to be used in the likelihood and kept in the marginalised posterior.

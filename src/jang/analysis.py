@@ -3,11 +3,13 @@ import itertools
 import numpy as np
 
 import jang.conversions
-from jang.gw import get_search_region
+from jang.gw import GW, get_search_region
+from jang.neutrinos import DetectorBase
+from jang.parameters import Parameters
 
 
 class Analysis:
-    def __init__(self, gw: 'GW', detector: 'DetectorBase', parameters: 'Parameters'):
+    def __init__(self, gw: GW, detector: DetectorBase, parameters: Parameters):
         self._gw = gw
         self._detector = detector
         self._parameters = parameters
