@@ -1,6 +1,7 @@
 [project]
 name = "jang"
-version = "0.1"
+authors = [{name = "Mathieu Lamoureux"}]
+dynamic = ["version"]
 dependencies = [
     "astropy",
     "cached_property",
@@ -53,3 +54,12 @@ directory = "coverage_html_report"
 
 [tool.black]
 line-length = 120
+
+[tool.setuptools-git-versioning]
+enabled = true
+
+[tool.setuptools_scm]
+write_to = "src/jang/version.py"
+
+[tool.check-manifest]
+ignore = "src/jang/version.py"
