@@ -1,14 +1,14 @@
 [project]
 name = "jang"
 authors = [{name = "Mathieu Lamoureux"}]
-dynamic = ["version"]
+version = "1.0"
 dependencies = [
     "astropy",
     "cached_property",
     "datetime",
     "h5py",
     "healpy",
-    "ligo.skymap==1.0.6",
+    "ligo.skymap",
     "matplotlib",
     "numpy",
     "pandas",
@@ -53,13 +53,4 @@ exclude_also = [
 directory = "coverage_html_report"
 
 [tool.black]
-line-length = 120
-
-[tool.setuptools-git-versioning]
-enabled = true
-
-[tool.setuptools_scm]
-write_to = "src/jang/version.py"
-
-[tool.check-manifest]
-ignore = "src/jang/version.py"
+line-length = 150

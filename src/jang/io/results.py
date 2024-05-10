@@ -10,15 +10,13 @@ import os
 import pandas as pd
 from typing import Optional, Union
 
-from jang.conversions import JetModelBase
-from jang.gw import GW
-from jang.neutrinos import Detector, SuperDetector
-from jang.parameters import Parameters
+from jang.utils.conversions import JetModelBase
+from jang.io import GW, NuDetector, SuperNuDetector, Parameters
 
 matplotlib.use("Agg")
 
 
-class Database:
+class ResDatabase:
     """Database containing all obtained results."""
 
     def __init__(self, filepath: Optional[str] = None, db: Optional[pd.DataFrame] = None):
@@ -33,7 +31,7 @@ class Database:
 
     def add_entry(
         self,
-        detector: Union[Detector, SuperDetector],
+        detector: Union[NuDetector, SuperNuDetector],
         gw: GW,
         parameters: Parameters,
         limit_flux: float,
@@ -46,9 +44,9 @@ class Database:
     ):
         """Adds new entry to the database."""
         sample_names = []
-        if isinstance(detector, Detector):
+        if isinstance(detector, NuDetector):
             sample_names = [s.shortname for s in detector.samples]
-        elif isinstance(detector, SuperDetector):
+        elif isinstance(detector, SuperNuDetector):
             sample_names = ["%s/%s" % (det.name, s.shortname) for det in detector.detectors for s in det.samples]
         else:
             raise TypeError("Unsupported object as detector.")
@@ -106,30 +104,30 @@ class Database:
         self.sort()
         self.db.to_csv(outfile)
 
-    def select_detector(self, det: Union[Detector, SuperDetector, str]):
+    def select_detector(self, det: Union[NuDetector, SuperNuDetector, str]):
         """Select a given detector and return a reduced database."""
         if isinstance(det, str):
-            return Database(db=self.db[self.db["Detector.name"] == det])
+            return ResDatabase(db=self.db[self.db["Detector.name"] == det])
         else:
-            return Database(db=self.db[self.db["Detector.name"] == det.name])
+            return ResDatabase(db=self.db[self.db["Detector.name"] == det.name])
 
     def select_spectrum(self, spectrum: str):
         """Select a given neutrino spectrum."""
-        return Database(db=self.db[self.db["Parameters.neutrino_spectrum"] == spectrum])
+        return ResDatabase(db=self.db[self.db["Parameters.neutrino_spectrum"] == spectrum])
 
     def select_jetmodel(self, jetmodel: Union[JetModelBase, str]):
         """Select a given jet model."""
         if isinstance(jetmodel, str):
-            return Database(db=self.db[self.db["Parameters.jet_model"] == jetmodel])
+            return ResDatabase(db=self.db[self.db["Parameters.jet_model"] == jetmodel])
         else:
-            return Database(db=self.db[self.db["Parameters.jet_model"] == jetmodel.__repr__()])
+            return ResDatabase(db=self.db[self.db["Parameters.jet_model"] == jetmodel.__repr__()])
 
     def select_gwtype(self, gwtype: str):
-        return Database(db=self.db[self.db["GW.type"] == gwtype])
+        return ResDatabase(db=self.db[self.db["GW.type"] == gwtype])
 
     def select(
         self,
-        det: Optional[Union[Detector, SuperDetector, str]] = None,
+        det: Optional[Union[NuDetector, SuperNuDetector, str]] = None,
         spectrum: Optional[str] = None,
         jetmodel: Optional[Union[JetModelBase, str]] = None,
         gwtype: Optional[str] = None,

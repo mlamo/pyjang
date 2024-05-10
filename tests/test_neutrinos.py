@@ -4,23 +4,23 @@ import numpy as np
 from typing import Iterable, Union
 import unittest
 
-from jang.neutrinos import (
+from jang.io.neutrinos import (
     Acceptance,
     BackgroundFixed,
     BackgroundGaussian,
     BackgroundPoisson,
-    Detector,
+    NuDetector,
     EffectiveAreaBase,
-    Sample,
-    SuperDetector,
-    ToyResult,
+    NuSample,
+    SuperNuDetector,
+    ToyNuDet,
 )
-from jang.neutrinos import infer_uncertainties
+from jang.io.utils import infer_uncertainties
 
 
 class TestSample(unittest.TestCase):
     def setUp(self):
-        self.s1 = Sample("sample")
+        self.s1 = NuSample("sample")
         self.s1.set_observations(0, BackgroundFixed(0.5))
         self.s1.set_energy_range(1, 1000)
 
@@ -57,8 +57,8 @@ class TestDetector(unittest.TestCase):
             "earth_location": {"latitude": 10.0, "longitude": 5.0, "units": "deg"},
             "errors": {"acceptance": 0.40, "acceptance_corr": 1, "background": 0.40},
         }
-        self.d1 = Detector(self.dict_det1)
-        self.d2 = Detector(self.dict_det2)
+        self.d1 = NuDetector(self.dict_det1)
+        self.d2 = NuDetector(self.dict_det2)
         self.d2.set_observations(
             [0, 0, 0, 0],
             [
@@ -113,9 +113,9 @@ class TestDetector(unittest.TestCase):
     def test_exceptions(self):
         self.dict_det1["samples"]["energyrange"] = 0
         with self.assertRaises(RuntimeError):
-            Detector(self.dict_det1)
+            NuDetector(self.dict_det1)
         with self.assertRaises(TypeError):
-            Detector(0)
+            NuDetector(0)
         with self.assertRaises(RuntimeError):
             self.d1.set_observations([0, 0], [BackgroundFixed(0)])
         with self.assertRaises(RuntimeError):
@@ -130,7 +130,7 @@ class TestDetector(unittest.TestCase):
         self.assertEqual(len(t), 500)
 
     def test_superdetector(self):
-        sd = SuperDetector("SD")
+        sd = SuperNuDetector("SD")
         sd.add_detector(self.d1)
         sd.add_detector(self.d2)
         with self.assertLogs(level="ERROR"):
@@ -172,7 +172,7 @@ class TestEffectiveArea(unittest.TestCase):
             "earth_location": {"latitude": 0, "longitude": 0, "units": "deg"},
             "errors": {"acceptance": 0, "acceptance_corr": 0, "background": 0},
         }
-        det = Detector(self.dict_det)
+        det = NuDetector(self.dict_det)
         aeff = MyEffectiveArea(det.samples[0])
         aeff.to_acceptance(det, 4, 2450000, "x**-2")
         with self.assertRaises(RuntimeError):
@@ -202,8 +202,8 @@ class TestOther(unittest.TestCase):
             infer_uncertainties([0, 0, 0], 2)
 
     def test_toyresult(self):
-        t = ToyResult([0, 1], [0.5, 1.5], [1, 1])
+        t = ToyNuDet([0, 1], [0.5, 1.5], [1, 1])
         self.assertEqual(
             t.__str__(),
-            "ToyResult: n(observed)=[0 1], n(background)=[0.5 1.5], var(acceptance)=[1 1], events=None",
+            "ToyNuDet: n(observed)=[0 1], n(background)=[0.5 1.5], var(acceptance)=[1 1], events=None",
         )

@@ -11,16 +11,15 @@ import os
 import ROOT
 from typing import Union
 
-import jang.conversions
-import jang.gw
-import jang.limits
-import jang.results
-from jang.neutrinos import EffectiveAreaBase, BackgroundFixed, Detector, Sample
-from jang.parameters import Parameters
+import jang.utils.conversions
+import jang.analysis.limits
+import jang.analysis.significance
+from jang.io import GWDatabase, NuDetector, Parameters, ResDatabase
+from jang.io.neutrinos import EffectiveAreaBase, BackgroundFixed, NuSample
 
 
 class EffectiveAreaSK(EffectiveAreaBase):
-    def __init__(self, filename: str, sample: Sample):
+    def __init__(self, filename: str, sample: NuSample):
         super().__init__(sample)
         self.filename = filename
         self.rootfile = self.rootgraphs = None
@@ -55,14 +54,13 @@ def single_event(gwname: str, gwdbfile: str, det_results: dict, pars: Parameters
         - effarea: path to the effective area file
     """
 
-    database_gw = jang.gw.Database(gwdbfile)
-    database_res = jang.results.Database(dbfile)
+    database_gw = GWDatabase(gwdbfile)
+    database_gw.set_parameters(pars)
+    database_res = ResDatabase(dbfile)
 
-    sk = Detector("examples/input_files/detector_superk.yaml")
-    effarea_sk = [
-        EffectiveAreaSK(filename=det_results["effarea"], sample=s) for s in sk.samples
-    ]
-    gw = database_gw.find_gw(gwname, pars)
+    sk = NuDetector("examples/input_files/detector_superk.yaml")
+    effarea_sk = [EffectiveAreaSK(filename=det_results["effarea"], sample=s) for s in sk.samples]
+    gw = database_gw.find_gw(gwname)
 
     accs = [
         effarea.to_acceptance(sk, pars.nside, gw.jd, pars.spectrum)
@@ -74,11 +72,11 @@ def single_event(gwname: str, gwdbfile: str, det_results: dict, pars: Parameters
 
     def pathpost(x):
         return f"{os.path.dirname(dbfile)}/lkls/{x}_{gw.name}_{sk.name}_{pars.str_filename}" if dbfile is not None else None
-    limit_flux = jang.limits.get_limit_flux(sk, gw, pars, pathpost("flux"))
-    limit_etot = jang.limits.get_limit_etot(sk, gw, pars, pathpost("eiso"))
-    limit_fnu = jang.limits.get_limit_fnu(sk, gw, pars, pathpost("fnu"))
+    limit_flux = jang.analysis.limits.get_limit_flux(sk, gw, pars, pathpost("flux"))
+    limit_etot = jang.analysis.limits.get_limit_etot(sk, gw, pars, pathpost("eiso"))
+    limit_fnu = jang.analysis.limits.get_limit_fnu(sk, gw, pars, pathpost("fnu"))
 
-    jang.significance.compute_prob_null_hypothesis(sk, gw, pars)
+    jang.analysis.significance.compute_prob_null_hypothesis(sk, gw, pars)
 
     database_res.add_entry(sk, gw, pars, limit_flux, limit_etot, limit_fnu, pathpost("flux"), pathpost("eiso"), pathpost("fnu"))
     if dbfile is not None:
@@ -88,13 +86,13 @@ def single_event(gwname: str, gwdbfile: str, det_results: dict, pars: Parameters
 if __name__ == "__main__":
 
     parameters = Parameters("examples/input_files/config.yaml")
-    parameters.set_models("x**-2", jang.conversions.JetIsotropic())
+    parameters.set_models("x**-2", jang.utils.conversions.JetIsotropic())
     parameters.nside = 8
 
     gwdb = "examples/input_files/gw_catalogs/database_example.csv"
     detresults = {
         "nobs": [0, 0, 0],
-        "nbkg": [0, 0, 0],
+        "nbkg": [0.112, 0.007, 0.016],
         "effarea": "examples/input_files/effarea_superk.root",
     }
     single_event("GW190412", gwdb, detresults, parameters)

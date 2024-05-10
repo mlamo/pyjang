@@ -6,9 +6,9 @@ from scipy.interpolate import interp1d
 
 class PosteriorVariable:
 
-    def __init__(self, name: str, range: tuple, nevals: int = 101, log: bool = False):
+    def __init__(self, name: str, min: float, max: float, nevals: int = 101, log: bool = False):
         self.name = name
-        self.range = range
+        self.range = (min, max)
         self.nevals = nevals
         self.log = log
         self.prior = lambda x: 1

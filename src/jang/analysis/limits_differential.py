@@ -5,17 +5,13 @@ import numpy as np
 from typing import List, Tuple
 
 from jang import DisableLogger
-from jang.gw import GW
-from jang.limits import get_limit_flux
-from jang.neutrinos import DetectorBase, EffectiveAreaBase
-from jang.parameters import Parameters
-
+from jang.analysis.limits import get_limit_flux
+from jang.io import NuDetectorBase, GW, Parameters
+from jang.io.neutrinos import EffectiveAreaBase
 plt.close("all")
 
 
-def prepare_acceptances(
-    det: DetectorBase, aeffs: List[EffectiveAreaBase], energy_bins: List[Tuple], pars: Parameters, jd: float
-):
+def prepare_acceptances(det: NuDetectorBase, aeffs: List[EffectiveAreaBase], energy_bins: List[Tuple], pars: Parameters, jd: float):
 
     accs = []
     for aeff, sample in zip(aeffs, det.samples):
@@ -31,9 +27,7 @@ def prepare_acceptances(
     return accs
 
 
-def get_flux_limits(
-    detector: DetectorBase, aeffs: List[EffectiveAreaBase], gw: GW, parameters: Parameters, energy_bins: List[Tuple]
-):
+def get_flux_limits(detector: NuDetectorBase, aeffs: List[EffectiveAreaBase], gw: 'GW', parameters: Parameters, energy_bins: List[Tuple]):
 
     results = prepare_acceptances(detector, aeffs, energy_bins, parameters, gw.jd)
 

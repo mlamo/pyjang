@@ -4,16 +4,14 @@ from jang.stats.utils import PosteriorVariable
 import numpy as np
 from typing import List, Tuple
 
-from jang.gw import GW
-from jang.neutrinos import Detector
-from jang.parameters import Parameters
+from jang.io import GW, NuDetector, Parameters
 from jang.analysis import Analysis
 import jang.stats.likelihoods as lkl
 import jang.stats.priors as prior
 
 
 def compute_flux_posterior(
-    variables: List[PosteriorVariable], detector: Detector, gw: GW, parameters: Parameters, fixed_gwpixel: int = None
+    variables: List[PosteriorVariable], detector: NuDetector, gw: GW, parameters: Parameters, fixed_gwpixel: int = None
 ) -> Tuple[np.ndarray, np.ndarray]:
     """Compute the posterior as a function of all-flavour neutrino flux at Earth.
     The list of 'variables' **SHOULD** contain a PosteriorVariable with name 'flux'.
@@ -62,7 +60,7 @@ def compute_flux_posterior(
 
 
 def compute_etot_posterior(
-    variables: List[PosteriorVariable], detector: Detector, gw: GW, parameters: Parameters
+    variables: List[PosteriorVariable], detector: NuDetector, gw: GW, parameters: Parameters
 ) -> Tuple[np.ndarray, np.ndarray]:
     """Compute the posterior as a function of total energy. The list of 'variables' **SHOULD** contain a PosteriorVariable with name 'etot'.
 
@@ -80,7 +78,7 @@ def compute_etot_posterior(
     ana = Analysis(gw=gw, detector=detector, parameters=parameters)
     ana.add_gw_variables("luminosity_distance", "theta_jn")
 
-    # build parameter space (needs at least 'flux' variable)
+    # build parameter space (needs at least 'etot' variable)
     arr_vars = np.meshgrid(*[var.array for var in variables], indexing="ij")
     arr_vars = {var.name: arr_vars[i] for i, var in enumerate(variables)}
     arr_vars[0] = arr_vars.pop("etot")
@@ -107,7 +105,7 @@ def compute_etot_posterior(
 
 
 def compute_fnu_posterior(
-    variables: List[PosteriorVariable], detector: Detector, gw: GW, parameters: dict
+    variables: List[PosteriorVariable], detector: NuDetector, gw: GW, parameters: dict
 ) -> Tuple[np.ndarray, np.ndarray]:
     """Compute the posterior as a function of fnu=E(tot)/E(radiated). The list of 'variables' **SHOULD** contain a PosteriorVariable with name 'fnu'.
 

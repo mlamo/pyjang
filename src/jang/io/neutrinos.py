@@ -21,54 +21,26 @@ from scipy.linalg import block_diag
 from scipy.stats import gamma, multivariate_normal, truncnorm
 
 import jang.stats.pdfs as pdf
+from jang.io.utils import infer_uncertainties
 
 matplotlib.use("Agg")
 warnings.filterwarnings("ignore", category=scipy.integrate.IntegrationWarning)
 
 
-def infer_uncertainties(
-    input_array: Union[float, np.ndarray],
-    nsamples: int,
-    correlation: Optional[float] = None,
-) -> np.ndarray:
-    """Infer uncertainties based on an input array that could be 0-D (same error for each sample),
-    1-D (one error per sample), 2-D (correlation matrix)."""
-
-    if input_array is None:
-        return None
-    input_array = np.array(input_array)
-    correlation_matrix = (correlation if correlation is not None else 0) * np.ones((nsamples, nsamples))
-    np.fill_diagonal(correlation_matrix, 1)
-    # if uncertainty is a scalar (error for all samples)
-    if input_array.ndim == 0:
-        return input_array * correlation_matrix * input_array
-    # if uncertainty is a vector (error for each sample)
-    if input_array.shape == (nsamples,):
-        return np.array(
-            [
-                [input_array[i] * correlation_matrix[i, j] * input_array[j] for i in range(nsamples)]
-                for j in range(nsamples)
-            ]
-        )
-    # if uncertainty is a covariance matrix
-    if input_array.shape == (nsamples, nsamples):
-        return input_array
-    raise RuntimeError("The size of uncertainty_acceptance does not match with the number of samples")
-
-
 class Acceptance:
-    """Class to handle detector acceptance for a given sample, spectrum and neutrino flavour."""
+    """General class to handle detector acceptance for a given sample, spectrum and neutrino flavour.
+    The acceptance is stored as a numpy array representing a HealPix map."""
 
     def __init__(self, rinput: Union[np.ndarray, float, int, str]):
-        if isinstance(rinput, np.ndarray):
+        if isinstance(rinput, np.ndarray):  # pass the numpy array directly
             self.map = rinput
             self.nside = hp.npix2nside(len(self.map))
-        elif isinstance(rinput, float) or isinstance(rinput, int):
+        elif isinstance(rinput, float) or isinstance(rinput, int):  # constant value for all sky
             self.map = rinput
             self.nside = 0
-        elif isinstance(rinput, str) and rinput.endswith(".npy"):  # pragma: no cover
+        elif isinstance(rinput, str) and rinput.endswith(".npy"):  # input npy file
             self.from_npy(rinput)
-        else:
+        else:  # default value = 0
             logging.getLogger("jang").warning("Acceptance is set to 0!")
             self.map = 0
             self.nside = 0
@@ -78,7 +50,9 @@ class Acceptance:
         return self.evaluate(ipix)
 
     def is_zero(self):
-        return self.nside == 0
+        if self.nside == 0:
+            return True
+        return np.all(self.map == 0)
 
     def from_npy(self, file: str):  # pragma: no cover
         assert os.path.isfile(file)
@@ -88,13 +62,13 @@ class Acceptance:
     def change_resolution(self, nside):
         if self.nside != nside:
             if self.is_zero():
-                self.map = self.map * np.ones(hp.nside2npix(nside))
+                self.map = np.zeros(hp.nside2npix(nside))
             else:
                 self.map = hp.pixelfunc.ud_grade(self.map, nside)
                 self.nside = nside
 
     def evaluate(self, ipix: int, nside: Optional[int] = None):
-        if self.nside == 0:
+        if self.is_zero():
             return 0
         ipix_acc = ipix
         if nside is not None and nside != self.nside:
@@ -102,18 +76,10 @@ class Acceptance:
         return self.map[ipix_acc]
 
     def draw(self, outfile: str, log: bool = False):  # pragma: no cover
-        if self.nside == 0:
+        if self.is_zero():
             return
         plt.close("all")
-        hp.mollview(
-            self.map,
-            min=None if log else 0,
-            rot=180,
-            cmap="Blues",
-            title="",
-            unit=r"Acceptance [cm$^{2}$/GeV]",
-            norm="log" if log else None,
-        )
+        hp.mollview(self.map, min=None if log else 0, rot=180, cmap="Blues", title="", unit=r"Acceptance [cm$^{2}$/GeV]", norm="log" if log else None)
         hp.graticule()
         plt.savefig(outfile, dpi=300)
 
@@ -178,7 +144,9 @@ class BackgroundPoisson(Background):
         return f"{self.nominal:.2e} = {self.Noff:d}/{self.alpha_offon:d}"
 
 
-class Event:
+class NuEvent:
+    """Class to handle a single neutrino candidate."""
+    
     def __init__(
         self,
         dt: float = np.nan,
@@ -222,11 +190,8 @@ class Event:
         return np.log10(self.energy)
 
 
-EventsList = List[Event]
-
-
-class Sample:
-    """Class to handle the detector samples."""
+class NuSample:
+    """Class to handle a given neutrino sample characterised by its name, observed events, expected background and PDFs."""
 
     def __init__(self, name: str = None, shortname: str = None):
         self.acceptances = {}
@@ -255,7 +220,7 @@ class Sample:
         self.nobserved = nobserved
         self.background = bkg
 
-    def set_events(self, events: EventsList):
+    def set_events(self, events: List[NuEvent]):
         self.events = events
 
     def set_pdfs(
@@ -289,7 +254,7 @@ class Sample:
         return np.log10(self.energy_range[0]), np.log10(self.energy_range[1])
 
 
-class ToyResult:
+class ToyNuDet:
     """Class to handle toys related to detector systematics."""
 
     def __init__(
@@ -297,7 +262,7 @@ class ToyResult:
         nobserved: np.ndarray,
         nbackground: np.ndarray,
         var_acceptance: np.ndarray,
-        events: Optional[List[EventsList]] = None,
+        events: Optional[List[List[NuEvent]]] = None,
     ):
         self.nobserved = np.array(nobserved)
         self.nbackground = np.array(nbackground)
@@ -305,7 +270,7 @@ class ToyResult:
         self.events = events
 
     def __str__(self):
-        return "ToyResult: n(observed)=%s, n(background)=%s, var(acceptance)=%s, events=%s" % (
+        return "ToyNuDet: n(observed)=%s, n(background)=%s, var(acceptance)=%s, events=%s" % (
             self.nobserved,
             self.nbackground,
             self.var_acceptance,
@@ -313,7 +278,7 @@ class ToyResult:
         )
 
 
-class DetectorBase(abc.ABC):
+class NuDetectorBase(abc.ABC):
     """Class to handle the neutrino detector information."""
 
     def __init__(self):
@@ -349,7 +314,7 @@ class DetectorBase(abc.ABC):
                 acctot[ipix] += acc.evaluate(ipix, nside)
         return np.nonzero(acctot)[0]
 
-    def prepare_toys(self, ntoys: int = 0) -> List[ToyResult]:
+    def prepare_toys(self, ntoys: int = 0) -> List[ToyNuDet]:
 
         toys = []
         nobserved = np.array([s.nobserved for s in self.samples])
@@ -357,12 +322,12 @@ class DetectorBase(abc.ABC):
         events = [s.events for s in self.samples]
 
         if np.any(np.isnan(nobserved)):
-            raise RuntimeError("[Detector] The number of observed events is not correctly filled.")
+            raise RuntimeError("[NuDetector] The number of observed events is not correctly filled.")
 
         # if no toys
         if ntoys == 0:
             nbackground = [bkg.nominal for bkg in background]
-            toy = ToyResult(nobserved, nbackground, np.ones(self.nsamples), events)
+            toy = ToyNuDet(nobserved, nbackground, np.ones(self.nsamples), events)
             return [toy]
 
         # acceptance toys
@@ -375,11 +340,11 @@ class DetectorBase(abc.ABC):
         toys_background = np.array([bkg.prepare_toys(ntoys) for bkg in background]).T
 
         for i in range(ntoys):
-            toys.append(ToyResult(nobserved, toys_background[i], toys_acceptance[i], events))
+            toys.append(ToyNuDet(nobserved, toys_background[i], toys_acceptance[i], events))
         return toys
 
 
-class Detector(DetectorBase):
+class NuDetector(NuDetectorBase):
     """Class to handle the neutrino detector information."""
 
     def __init__(self, infile: Optional[Union[dict, str]] = None):
@@ -402,10 +367,10 @@ class Detector(DetectorBase):
             assert os.path.isfile(rinput)
             with open(rinput) as f:
                 data = yaml.safe_load(f)
-            log.info("[Detector] Object is loaded from the file %s.", rinput)
+            log.info("[NuDetector] Object is loaded from the file %s.", rinput)
         elif isinstance(rinput, dict):
             data = rinput
-            log.info("[Detector] Object is loaded from a dictionary object.")
+            log.info("[NuDetector] Object is loaded from a dictionary object.")
         else:
             raise TypeError("Unknown input format for Detector constructor")
         self.name = data["name"]
@@ -416,7 +381,7 @@ class Detector(DetectorBase):
                 lon=data["earth_location"]["longitude"] * unit,
             )
         for i in range(data["nsamples"]):
-            smp = Sample(
+            smp = NuSample(
                 name=data["samples"]["names"][i],
                 shortname=data["samples"]["shortnames"][i] if "shortnames" in data["samples"] else None,
             )
@@ -426,7 +391,7 @@ class Detector(DetectorBase):
             elif data["samples"]["energyrange"].shape == (2,):
                 smp.set_energy_range(*data["samples"]["energyrange"])
             else:
-                raise RuntimeError("[Detector] Unknown format for energy range.")
+                raise RuntimeError("[NuDetector] Unknown format for energy range.")
             self._samples.append(smp)
         if "errors" in data:
             self.error_acceptance = data["errors"]["acceptance"]
@@ -438,15 +403,15 @@ class Detector(DetectorBase):
 
     def set_observations(self, nobserved: list, background: list):
         if len(nobserved) != self.nsamples:
-            raise RuntimeError("[Detector] Incorrect size for nobserved as compared to the number of samples.")
+            raise RuntimeError("[NuDetector] Incorrect size for nobserved as compared to the number of samples.")
         if len(background) != self.nsamples:
-            raise RuntimeError("[Detector] Incorrect size for nbackground as compared to the number of samples.")
+            raise RuntimeError("[NuDetector] Incorrect size for nbackground as compared to the number of samples.")
         for i, smp in enumerate(self.samples):
             smp.set_observations(nobserved[i], background[i])
 
     def set_acceptances(self, acceptances: list, spectrum: str, nside: Optional[int] = None):
         if len(acceptances) != self.nsamples:
-            raise RuntimeError("[Detector] Incorrect number of acceptances as compared to the number of samples.")
+            raise RuntimeError("[NuDetector] Incorrect number of acceptance maps as compared to the number of samples.")
         for acceptance, sample in zip(acceptances, self.samples):
             sample.set_acceptance(acceptance, spectrum, nside)
 
@@ -481,7 +446,7 @@ class Detector(DetectorBase):
         )
 
 
-class SuperDetector(DetectorBase):
+class SuperNuDetector(NuDetectorBase):
     """Class to handle several detectors simultaneously."""
 
     def __init__(self, name: Optional[str] = None):
@@ -497,7 +462,7 @@ class SuperDetector(DetectorBase):
     def nsamples(self):
         return sum([det.nsamples for det in self.detectors])
 
-    def add_detector(self, det: Detector):
+    def add_detector(self, det: NuDetector):
         log = logging.getLogger("jang")
         if det.name in [d.name for d in self.detectors]:
             log.error(
@@ -510,22 +475,18 @@ class SuperDetector(DetectorBase):
         self.error_acceptance = block_diag(*[d.error_acceptance for d in self.detectors])
 
 
-class EffectiveAreaBase:
+class EffectiveAreaBase(abc.ABC):
     """Class to handle detector effective area for a given sample and neutrino flavour."""
 
-    def __init__(self, sample: Sample):
+    def __init__(self, sample: NuSample):
         self.sample = sample
         self.args_evaluate = []
-
-    @abc.abstractmethod
-    def read(self):  # pragma: no cover
-        pass
 
     @abc.abstractmethod  # pragma: no cover
     def evaluate(self, energy: Union[float, Iterable]):
         pass
 
-    def to_acceptance(self, detector: Detector, nside: int, jd: float, spectrum: str):
+    def to_acceptance(self, detector: NuDetector, nside: int, jd: float, spectrum: str):
         if nside is None or nside <= 0:
             raise RuntimeError("A positive nside should be provided!")
         npix = hp.nside2npix(nside)

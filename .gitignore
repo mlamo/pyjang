@@ -3,9 +3,6 @@ __pycache__/
 *.py[cod]
 *.pyxbldc
 
-# Version info
-jang/version.py
-
 # Build stuff
 build/
 develop-eggs/
@@ -33,8 +30,3 @@ doc/_build/
 doc/auto_examples/
 doc/gen_modules/*.examples
 doc/api
-
-# Virtual env
-venv
-
-checks/

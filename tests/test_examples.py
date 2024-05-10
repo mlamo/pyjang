@@ -5,15 +5,13 @@ import unittest
 import healpy as hp
 import numpy as np
 
-import jang.conversions
-import jang.gw
-import jang.limits
-import jang.limits_differential
-import jang.results
-import jang.significance
-import jang.stacking
-from jang.neutrinos import BackgroundFixed, Detector, EffectiveAreaBase
-from jang.parameters import Parameters
+import jang.utils.conversions
+from jang.io import GWDatabase, NuDetector, Parameters, ResDatabase
+from jang.io.neutrinos import BackgroundFixed, EffectiveAreaBase
+import jang.analysis.limits as limits
+import jang.analysis.limits_differential as limits_differential
+import jang.analysis.significance as significance
+import jang.analysis.stacking as stacking
 
 
 class EffectiveArea(EffectiveAreaBase):
@@ -76,12 +74,13 @@ class TestExamples(unittest.TestCase):
 
         # configuration
         self.pars = Parameters(self.config_file)
-        self.pars.set_models("x**-2", jang.conversions.JetIsotropic())
+        self.pars.set_models("x**-2", jang.utils.conversions.JetIsotropic())
         # GW database
-        database_gw = jang.gw.Database(self.gwdb_file)
-        self.gw = database_gw.find_gw("GW190412", self.pars)
+        database_gw = GWDatabase(self.gwdb_file)
+        database_gw.set_parameters(self.pars)
+        self.gw = database_gw.find_gw("GW190412")
         # detector
-        self.det = Detector(self.det_file)
+        self.det = NuDetector(self.det_file)
         self.det.set_acceptances(self.accs, self.pars.spectrum, self.pars.nside)
         bkg = [BackgroundFixed(b) for b in [0.1, 0.3]]
         self.det.set_observations([0, 0], bkg)
@@ -91,43 +90,43 @@ class TestExamples(unittest.TestCase):
     def test_limits_nosyst(self):
         self.pars.apply_det_systematics = False
         self.pars.likelihood_method = "poisson"
-        jang.limits.get_limit_flux(self.det, self.gw, self.pars, f"{self.tmpdir}/flux")
-        jang.limits.get_limit_etot(self.det, self.gw, self.pars, f"{self.tmpdir}/etot")
-        jang.limits.get_limit_fnu(self.det, self.gw, self.pars, f"{self.tmpdir}/fnu")
-        jang.significance.compute_prob_null_hypothesis(self.det, self.gw, self.pars)
+        limits.get_limit_flux(self.det, self.gw, self.pars, f"{self.tmpdir}/flux")
+        limits.get_limit_etot(self.det, self.gw, self.pars, f"{self.tmpdir}/etot")
+        limits.get_limit_fnu(self.det, self.gw, self.pars, f"{self.tmpdir}/fnu")
+        significance.compute_prob_null_hypothesis(self.det, self.gw, self.pars)
 
     def test_limits_wsyst(self):
         self.pars.apply_det_systematics = True
         self.pars.ntoys_det_systematics = 10
         self.pars.likelihood_method = "poisson"
-        jang.limits.get_limit_flux(self.det, self.gw, self.pars, f"{self.tmpdir}/flux")
-        jang.limits.get_limit_etot(self.det, self.gw, self.pars, f"{self.tmpdir}/etot")
-        jang.limits.get_limit_fnu(self.det, self.gw, self.pars, f"{self.tmpdir}/fnu")
-        jang.significance.compute_prob_null_hypothesis(self.det, self.gw, self.pars)
+        limits.get_limit_flux(self.det, self.gw, self.pars, f"{self.tmpdir}/flux")
+        limits.get_limit_etot(self.det, self.gw, self.pars, f"{self.tmpdir}/etot")
+        limits.get_limit_fnu(self.det, self.gw, self.pars, f"{self.tmpdir}/fnu")
+        significance.compute_prob_null_hypothesis(self.det, self.gw, self.pars)
 
     def test_limits_pointsource(self):
         self.pars.apply_det_systematics = False
         self.pars.likelihood_method = "pointsource"
-        jang.limits.get_limit_flux(self.det, self.gw, self.pars, f"{self.tmpdir}/flux")
-        jang.limits.get_limit_etot(self.det, self.gw, self.pars, f"{self.tmpdir}/etot")
-        jang.limits.get_limit_fnu(self.det, self.gw, self.pars, f"{self.tmpdir}/fnu")
+        limits.get_limit_flux(self.det, self.gw, self.pars, f"{self.tmpdir}/flux")
+        limits.get_limit_etot(self.det, self.gw, self.pars, f"{self.tmpdir}/etot")
+        limits.get_limit_fnu(self.det, self.gw, self.pars, f"{self.tmpdir}/fnu")
 
     def test_difflimits(self):
         self.pars.apply_det_systematics = False
         self.pars.likelihood_method = "poisson"
         energy_bins = [(10.**x, 10.**(x+1)) for x in np.arange(-1, 9)]
         sample_styles = {'sampleA': {'color': 'blue'}, 'sampleB': {'color': 'red'}}
-        diff_limits = jang.limits_differential.get_flux_limits(self.det, self.aeffs, self.gw, self.pars, energy_bins)
-        jang.limits_differential.plot_flux_limits(f"{self.tmpdir}/diff.png", diff_limits, sample_styles)
+        diff_limits = limits_differential.get_flux_limits(self.det, self.aeffs, self.gw, self.pars, energy_bins)
+        limits_differential.plot_flux_limits(f"{self.tmpdir}/diff.png", diff_limits, sample_styles)
 
-    def test_db(self):
+    def test_results_db(self):
         # make fake lkl files for etot and fnu (needed for stacking)
         x, y = np.logspace(*self.pars.range_etot), np.flipud(np.arange(self.pars.range_etot[-1]))
         np.save(f"{self.tmpdir}/etot", [x, y])
         x, y = np.logspace(*self.pars.range_fnu), np.flipud(np.arange(self.pars.range_fnu[-1]))
         np.save(f"{self.tmpdir}/fnu", [x, y])
         # save in database
-        database_res = jang.results.Database(self.db_file)
+        database_res = ResDatabase(self.db_file)
         database_res.add_entry(
             self.det,
             self.gw,
@@ -154,7 +153,7 @@ class TestExamples(unittest.TestCase):
         )
         database_res.save()
         # open database
-        database_res = jang.results.Database(self.db_file)
+        database_res = ResDatabase(self.db_file)
         with self.assertLogs(level="INFO"):
             database_res = database_res.select()
         database_res = database_res.select(self.det, self.pars.spectrum, self.pars.jet)
@@ -176,19 +175,19 @@ class TestExamples(unittest.TestCase):
             f"{self.tmpdir}/obs.png", {s.shortname: "black" for s in self.det.samples}
         )
         #
-        jang.stacking.stack_events(database_res, self.pars)
+        stacking.stack_events(database_res, self.pars)
         with self.assertLogs(level="ERROR"):
-            jang.stacking.stack_events_listgw(
+            stacking.stack_events_listgw(
                 database_res, ["GW190412", "missing_ev"], self.pars
             )
-        jang.stacking.stack_events_weightedevents(
+        stacking.stack_events_weightedevents(
             database_res,
             {"GW190412": 1},
             self.pars,
             outfile=f"{self.tmpdir}/stacking.png",
         )
         with self.assertLogs(level="ERROR"):
-            jang.stacking.stack_events_weightedevents(
+            stacking.stack_events_weightedevents(
                 database_res,
                 {"GW190412": 1, "missing_ev": 0.5},
                 self.pars,

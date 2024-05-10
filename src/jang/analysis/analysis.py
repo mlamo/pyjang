@@ -2,14 +2,13 @@ from cached_property import cached_property
 import itertools
 import numpy as np
 
-import jang.conversions
-from jang.gw import GW, get_search_region
-from jang.neutrinos import DetectorBase
-from jang.parameters import Parameters
+import jang.utils.conversions
+from jang.io import GW, NuDetectorBase, Parameters
+from jang.io.utils import get_search_region
 
 
 class Analysis:
-    def __init__(self, gw: GW, detector: DetectorBase, parameters: Parameters):
+    def __init__(self, gw: GW, detector: NuDetectorBase, parameters: Parameters):
         self._gw = gw
         self._detector = detector
         self._parameters = parameters
@@ -38,15 +37,9 @@ class Analysis:
         region_restricted = get_search_region(self._detector, self._gw, self._parameters)
         if fixed_gwpixel is not None:
             self.toys_gw = self._gw.fits.prepare_toy(nside=self._parameters.nside, fixed_pixel=fixed_gwpixel)
-        elif self._gw.samples:
-            self.toys_gw = self._gw.samples.prepare_toys(
-                *self._gwvars, nside=self._parameters.nside, region_restriction=region_restricted
-            )
         else:
-            self.toys_gw = self._gw.fits.prepare_toys(
-                nside=self._parameters.nside, region_restriction=region_restricted
-            )
-
+            self.toys_gw = self._gw.prepare_toys(*self._gwvars, nside=self._parameters.nside, region_restriction=region_restricted)
+            
         # Detector toys
         if self._parameters.apply_det_systematics:
             self.toys_det = self._detector.prepare_toys(self._parameters.ntoys_det_systematics)
@@ -69,17 +62,17 @@ class Analysis:
         return phi_to_nsig
 
     def eiso_to_phi(self, toy: tuple):
-        return jang.conversions.eiso_to_phi(
+        return jang.utils.conversions.eiso_to_phi(
             self._parameters.range_energy_integration,
             self._parameters.spectrum,
             toy[0].luminosity_distance,
         )
 
     def etot_to_eiso(self, toy: tuple):
-        return jang.conversions.etot_to_eiso(toy[0].theta_jn, self._parameters.jet)
+        return jang.utils.conversions.etot_to_eiso(toy[0].theta_jn, self._parameters.jet)
 
     def fnu_to_etot(self, toy: tuple):
-        return jang.conversions.fnu_to_etot(toy[0].radiated_energy)
+        return jang.utils.conversions.fnu_to_etot(toy[0].radiated_energy)
 
     def eiso_to_nsig(self, toy: tuple):
         return self.eiso_to_phi(toy) * self.phi_to_nsig(toy)

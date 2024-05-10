@@ -2,7 +2,7 @@ import numpy as np
 from scipy.special import gammaln
 from typing import Dict, List
 
-from jang.neutrinos import EventsList, Sample
+from jang.io.neutrinos import NuEvent, NuSample
 
 
 def logpoisson_one_sample(nobserved: int, nbackground: float, conv: float, var: np.ndarray) -> np.ndarray:
@@ -12,9 +12,7 @@ def logpoisson_one_sample(nobserved: int, nbackground: float, conv: float, var: 
     return loglkl
 
 
-def poisson_several_samples(
-    nobserved: np.ndarray, nbackground: np.ndarray, conv: np.ndarray, vars: Dict[str, np.ndarray]
-) -> np.ndarray:
+def poisson_several_samples(nobserved: np.ndarray, nbackground: np.ndarray, conv: np.ndarray, vars: Dict[str, np.ndarray]) -> np.ndarray:
     """Compute the multi-sample Poisson lkl. Each argument are arrays with one entry per sample."""
     loglkl = np.zeros_like(vars[0])
     for n_obs, n_bkg, cv in zip(nobserved, nbackground, conv):
@@ -25,13 +23,14 @@ def poisson_several_samples(
 def logpointsource_one_sample(
     nobserved: int,
     nbackground: float,
-    events: EventsList,
+    events: List[NuEvent],
     conv: float,
-    sample: Sample,
+    sample: NuSample,
     ra_src: float,
     dec_src: float,
-    vars: Dict[str, np.ndarray],
+    vars: Dict[str, np.ndarray]
 ) -> np.ndarray:
+
     if events is None:
         return logpoisson_one_sample(nobserved, nbackground, conv, vars[0])
 
@@ -66,13 +65,14 @@ def logpointsource_one_sample(
 def pointsource_several_samples(
     nobserved: np.ndarray,
     nbackground: np.ndarray,
-    events: List[EventsList],
+    events: List[List[NuEvent]],
     conv: np.ndarray,
-    samples: List[Sample],
+    samples: List[NuSample],
     ra_src: float,
     dec_src: float,
     vars: Dict[str, np.ndarray],
 ) -> np.ndarray:
+
     loglkl = np.zeros_like(vars[0])
     for n_obs, n_bkg, evts, cv, s in zip(nobserved, nbackground, events, conv, samples):
         loglkl += logpointsource_one_sample(n_obs, n_bkg, evts, cv, s, ra_src, dec_src, vars)

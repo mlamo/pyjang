@@ -5,7 +5,7 @@ import os
 import yaml
 from typing import Optional
 
-from jang.conversions import JetModelBase
+from jang.utils.conversions import JetModelBase
 
 
 class Parameters:

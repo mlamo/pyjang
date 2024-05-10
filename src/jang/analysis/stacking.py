@@ -6,14 +6,14 @@ import os
 from scipy.interpolate import interp1d
 from typing import Optional
 
-import jang.parameters
-import jang.results
+from jang.io import Parameters, ResDatabase
+import jang.stats
 
 matplotlib.use("Agg")
 np.seterr(divide="ignore")
 
 
-def stack_events_listgw(db: jang.results.Database, list_gw: list, pars: jang.parameters.Parameters):
+def stack_events_listgw(db: ResDatabase, list_gw: list, pars: Parameters):
 
     log = logging.getLogger("jang")
     triggers = []
@@ -52,13 +52,7 @@ def stack_events_listgw(db: jang.results.Database, list_gw: list, pars: jang.par
     return len(triggers), limit_etot, limit_fnu
 
 
-def stack_events_weightedevents(
-    db: jang.results.Database,
-    gw_withweights: dict,
-    pars: jang.parameters.Parameters,
-    npe: int = 10000,
-    outfile: Optional[str] = None,
-):
+def stack_events_weightedevents(db: ResDatabase, gw_withweights: dict, pars: Parameters, npe: int = 10000, outfile: Optional[str] = None):
 
     log = logging.getLogger("jang")
 
@@ -127,7 +121,7 @@ def stack_events_weightedevents(
     return np.median(results[:, 1]), np.median(results[:, 2])
 
 
-def stack_events(db: jang.results.Database, pars: jang.parameters.Parameters):
+def stack_events(db: ResDatabase, pars: Parameters):
 
     list_gw = list(db.db["GW.name"])
     return stack_events_listgw(db, list_gw, pars)
