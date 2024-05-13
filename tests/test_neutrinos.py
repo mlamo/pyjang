@@ -5,6 +5,7 @@ from typing import Iterable, Union
 import unittest
 
 from jang.io.neutrinos import (
+    infer_uncertainties,
     Acceptance,
     BackgroundFixed,
     BackgroundGaussian,
@@ -15,7 +16,6 @@ from jang.io.neutrinos import (
     SuperNuDetector,
     ToyNuDet,
 )
-from jang.io.utils import infer_uncertainties
 
 
 class TestSample(unittest.TestCase):

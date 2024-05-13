@@ -21,10 +21,32 @@ from scipy.linalg import block_diag
 from scipy.stats import gamma, multivariate_normal, truncnorm
 
 import jang.stats.pdfs as pdf
-from jang.io.utils import infer_uncertainties
 
 matplotlib.use("Agg")
 warnings.filterwarnings("ignore", category=scipy.integrate.IntegrationWarning)
+
+
+def infer_uncertainties(input_array: Union[float, np.ndarray], nsamples: int, correlation: Optional[float] = None) -> np.ndarray:
+    """Infer uncertainties based on an input array that could be:
+        - 0-D (same error for each sample)
+        - 1-D (one error per sample)
+        - 2-D (correlation matrix)
+    """
+    if input_array is None:
+        return None
+    input_array = np.array(input_array)
+    correlation_matrix = (correlation if correlation is not None else 0) * np.ones((nsamples, nsamples))
+    np.fill_diagonal(correlation_matrix, 1)
+    # if uncertainty is a scalar (error for all samples)
+    if input_array.ndim == 0:
+        return input_array * correlation_matrix * input_array
+    # if uncertainty is a vector (error for each sample)
+    if input_array.shape == (nsamples,):
+        return np.array([[input_array[i] * correlation_matrix[i, j] * input_array[j] for i in range(nsamples)] for j in range(nsamples)])
+    # if uncertainty is a covariance matrix
+    if input_array.shape == (nsamples, nsamples):
+        return input_array
+    raise RuntimeError("The size of uncertainty_acceptance does not match with the number of samples")
 
 
 class Acceptance:
