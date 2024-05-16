@@ -5,8 +5,16 @@ import numpy as np
 from scipy.stats import norm
 
 
-def angular_distance(ra1: np.ndarray, dec1: np.ndarray, ra2: np.ndarray, dec2: np.ndarray):
-    s = np.cos(ra1 - ra2) * np.cos(dec1) * np.cos(dec2) + np.sin(dec1) * np.sin(dec2)
+def angular_distance(ra1: np.ndarray, dec1: np.ndarray, ra2: np.ndarray, dec2: np.ndarray, degrees1=False, degrees2=False):
+    if degrees1:
+        r1, d1 = np.deg2rad(ra1), np.deg2rad(dec1)
+    else:
+        r1, d1 = ra1, dec1
+    if degrees2:
+        r2, d2 = np.deg2rad(ra2), np.deg2rad(dec2)
+    else:
+        r2, d2 = ra2, dec2
+    s = np.cos(r1 - r2) * np.cos(d1) * np.cos(d2) + np.sin(d1) * np.sin(d2)
     return np.arccos(np.clip(s, -1, 1))
 
 
@@ -34,8 +42,8 @@ class AngularSignal(PDF):
     def __init__(self, func: Callable = None):
         self.func = func
 
-    def __call__(self, evt, ra_src: float, dec_src: float):
-        dpsi = angular_distance(evt.ra, evt.dec, ra_src, dec_src)
+    def __call__(self, evt, ra_src: float, dec_src: float, degrees_evt: bool = False):
+        dpsi = angular_distance(evt.ra, evt.dec, ra_src, dec_src, degrees1=degrees_evt, degrees2=True)
         return self.func(dpsi, evt.energy)
 
 
@@ -45,8 +53,8 @@ class VonMisesSignal(AngularSignal):
     def __init__(self):
         pass
 
-    def __call__(self, evt, ra_src: float, dec_src: float):
-        dpsi = angular_distance(evt.ra, evt.dec, ra_src, dec_src)
+    def __call__(self, evt, ra_src: float, dec_src: float, degrees_evt: bool = False):
+        dpsi = angular_distance(evt.ra, evt.dec, ra_src, dec_src, degrees1=degrees_evt, degrees2=True)
         if evt.sigma > np.radians(7):
             kappa = 1.0 / evt.sigma**2
             return kappa * np.exp(kappa * np.cos(dpsi)) / (4 * np.pi * np.sinh(kappa))
