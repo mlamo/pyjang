@@ -1,0 +1,8 @@
+skymap_resolution: 8
+detector_systematics: 0
+
+analysis:
+  likelihood: poisson
+  prior_normalisation:
+    type: flat-linear
+    range: [0.0, 10000000000]
