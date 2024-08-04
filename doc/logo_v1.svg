@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="131.15167mm"
+   height="37.903492mm"
+   viewBox="0 0 131.15167 37.903492"
+   version="1.1"
+   id="svg5"
+   inkscape:version="1.1.1 (3bf5ae0d25, 2021-09-20)"
+   sodipodi:docname="momenta.svg"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview7"
+     pagecolor="#505050"
+     bordercolor="#eeeeee"
+     borderopacity="1"
+     inkscape:pageshadow="0"
+     inkscape:pageopacity="0"
+     inkscape:pagecheckerboard="0"
+     inkscape:document-units="mm"
+     showgrid="false"
+     inkscape:snap-global="true"
+     inkscape:snap-bbox="true"
+     inkscape:bbox-nodes="true"
+     inkscape:snap-bbox-edge-midpoints="true"
+     inkscape:snap-bbox-midpoints="false"
+     inkscape:bbox-paths="true"
+     fit-margin-bottom="4"
+     fit-margin-top="4"
+     fit-margin-left="4"
+     fit-margin-right="4"
+     inkscape:zoom="0.90583672"
+     inkscape:cx="197.05538"
+     inkscape:cy="165.04078"
+     inkscape:window-width="1920"
+     inkscape:window-height="1009"
+     inkscape:window-x="1912"
+     inkscape:window-y="-8"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="layer1" />
+  <defs
+     id="defs2">
+    <rect
+       x="214.27792"
+       y="49.178539"
+       width="21.076517"
+       height="108.11473"
+       id="rect32013" />
+    <rect
+       x="78.841789"
+       y="36.688751"
+       width="174.07642"
+       height="105.38258"
+       id="rect6062" />
+    <rect
+       x="78.841789"
+       y="36.688751"
+       width="174.07642"
+       height="105.38258"
+       id="rect18112" />
+    <rect
+       x="78.841789"
+       y="36.688751"
+       width="174.07642"
+       height="105.38258"
+       id="rect25154" />
+    <rect
+       x="78.841789"
+       y="36.688751"
+       width="174.07642"
+       height="105.38258"
+       id="rect25160" />
+  </defs>
+  <g
+     inkscape:label="Calque 1"
+     inkscape:groupmode="layer"
+     id="layer1"
+     transform="translate(-18.673724,-8.51442)">
+    <text
+       xml:space="preserve"
+       transform="scale(0.26458333)"
+       id="text6060"
+       style="font-style:normal;font-weight:normal;font-size:74.6667px;line-height:1.25;font-family:sans-serif;white-space:pre;shape-inside:url(#rect6062);fill:#00112b;fill-opacity:1;stroke:none"><tspan
+         x="78.841797"
+         y="102.75198"
+         id="tspan96878"><tspan
+           style="font-weight:bold;-inkscape-font-specification:'sans-serif Bold'"
+           id="tspan96876">M</tspan></tspan></text>
+    <text
+       xml:space="preserve"
+       transform="matrix(0.26458333,0,0,0.26458333,9.6774365e-8,15.201146)"
+       id="text18110"
+       style="font-style:normal;font-weight:normal;font-size:74.6667px;line-height:1.25;font-family:sans-serif;white-space:pre;shape-inside:url(#rect18112);fill:#00112b;fill-opacity:1;stroke:none"><tspan
+         x="78.841797"
+         y="102.75198"
+         id="tspan96882"><tspan
+           style="font-weight:bold;-inkscape-font-specification:'sans-serif Bold'"
+           id="tspan96880">M</tspan></tspan></text>
+    <text
+       xml:space="preserve"
+       transform="matrix(0.26458333,0,0,0.26458333,18.313447,15.201146)"
+       id="text25152"
+       style="font-style:normal;font-weight:normal;font-size:74.6667px;line-height:1.25;font-family:sans-serif;white-space:pre;shape-inside:url(#rect25154);fill:#00112b;fill-opacity:1;stroke:none"><tspan
+         x="78.841797"
+         y="102.75198"
+         id="tspan96886"><tspan
+           style="font-weight:bold;-inkscape-font-specification:'sans-serif Bold'"
+           id="tspan96884">E</tspan></tspan></text>
+    <text
+       xml:space="preserve"
+       transform="matrix(0.26458333,0,0,0.26458333,16.852037,-0.00964627)"
+       id="text25158"
+       style="font-style:normal;font-weight:normal;font-size:74.6667px;line-height:1.25;font-family:sans-serif;white-space:pre;shape-inside:url(#rect25160);fill:#00112b;fill-opacity:1;stroke:none"><tspan
+         x="78.841797"
+         y="102.75198"
+         id="tspan96890"><tspan
+           style="font-weight:bold;-inkscape-font-specification:'sans-serif Bold'"
+           id="tspan96888">O</tspan></tspan></text>
+    <path
+       style="fill:#333333;stroke:#1a1a1a;stroke-width:8.16884;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+       d="m 58.906175,42.387571 -4.9e-4,-29.873084"
+       id="path73375"
+       sodipodi:nodetypes="cc" />
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-weight:normal;font-size:40.9222px;line-height:1.25;font-family:sans-serif;fill:#aa4400;fill-opacity:1;stroke:none;stroke-width:0.264583"
+       x="92.151527"
+       y="42.346901"
+       id="text75520"><tspan
+         sodipodi:role="line"
+         id="tspan75518"
+         style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:40.9222px;font-family:sans-serif;-inkscape-font-specification:'sans-serif Bold';fill:#aa4400;stroke-width:0.264583"
+         x="92.151527"
+         y="42.346901">T</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-weight:normal;font-size:40.9222px;line-height:1.25;font-family:sans-serif;fill:#1a1a1a;fill-opacity:1;stroke:none;stroke-width:0.264583"
+       x="114.35447"
+       y="42.346901"
+       id="text95580"><tspan
+         sodipodi:role="line"
+         id="tspan95578"
+         style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:40.9222px;font-family:sans-serif;-inkscape-font-specification:'sans-serif Bold';fill:#1a1a1a;stroke-width:0.264583"
+         x="114.35447"
+         y="42.346901">A</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-weight:normal;font-size:54.6806px;line-height:1.25;font-family:sans-serif;fill:#006680;fill-opacity:1;stroke:none;stroke-width:0.264583"
+       x="56.124931"
+       y="42.417912"
+       id="text45328"><tspan
+         sodipodi:role="line"
+         id="tspan45326"
+         style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:54.6806px;font-family:sans-serif;-inkscape-font-specification:'sans-serif Bold';fill:#006680;stroke-width:0.264583"
+         x="56.124931"
+         y="42.417912">𝞶</tspan></text>
+  </g>
+</svg>

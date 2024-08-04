@@ -1,5 +1,7 @@
 # Multi-Observations Multi-Energy Neutrino Transient Analysis
 
+![logo](https://github.com/mlamo/jang/blob/main/doc/logo_v1.svg)
+
 [![tests](https://github.com/mlamo/momenta/actions/workflows/tests.yml/badge.svg)](https://github.com/mlamo/momenta/actions/workflows/tests.yml)
 [![codecov](https://codecov.io/gh/mlamo/momenta/branch/main/graph/badge.svg?token=PVBSZ9P7TR)](https://codecov.io/gh/mlamo/momenta)
 [![License: GPL-3.0](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://opensource.org/licenses/GPL-3.0)
@@ -85,10 +87,12 @@ print("Available parameters:", model.param_names)
 print("Samples:", result["samples"])
 ```
 
-* Obtain X% upper limits:
+* Obtain X% upper limits or Highest Posterior Density (HPD) intervals:
 ```python
-limits = get_limits(result["samples"], model)
-print("Limit on the flux normalisation of the first component", limits["flux0_norm"])
+from momenta.stats.constraints import get_limits, get_hpd_interval
+limits = get_limits(result["samples"], model, CL=0.90)
+print("90% upper limit on the flux normalisation of the first component", limits["flux0_norm"])
+print("HPD interval", get_hpd_interval(result["samples"]["flux0_norm"], CL=0.90))
 ```
 
 ## Full examples
