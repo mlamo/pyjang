@@ -1,6 +1,7 @@
 # Multi-Observations Multi-Energy Neutrino Transient Analysis
 
-![logo](https://github.com/mlamo/jang/blob/main/doc/logo_v1.svg)
+![MOMENTA logo](https://github.com/mlamo/jang/blob/main/doc/logo_v1_darkmode.svg#gh-dark-mode-only)
+![MOMENTA logo](https://github.com/mlamo/jang/blob/main/doc/logo_v1_lightmode.svg#gh-light-mode-only)
 
 [![tests](https://github.com/mlamo/momenta/actions/workflows/tests.yml/badge.svg)](https://github.com/mlamo/momenta/actions/workflows/tests.yml)
 [![codecov](https://codecov.io/gh/mlamo/momenta/branch/main/graph/badge.svg?token=PVBSZ9P7TR)](https://codecov.io/gh/mlamo/momenta)
