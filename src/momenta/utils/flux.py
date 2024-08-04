@@ -58,6 +58,7 @@ class Component(abc.ABC):
     def flux_to_eiso(self, distance_scaling):
         def f(x):
             return self.evaluate(np.exp(x)) * (np.exp(x)) ** 2
+
         integration = quad(f, np.log(self.emin), np.log(self.emax), limit=100)[0]
         return distance_scaling * integration
 
@@ -161,7 +162,7 @@ class FluxBase(abc.ABC):
 
     def set_shapes(self, shapes):
         for c, i in zip(self.components, self.shape_positions):
-            c.set_shapes(shapes[i - c.nshapes:i])
+            c.set_shapes(shapes[i - c.nshapes : i])
 
     def evaluate(self, energy):
         return [c.evaluate(energy) for c in self.components]
@@ -170,7 +171,7 @@ class FluxBase(abc.ABC):
         return np.array([c.flux_to_eiso(distance_scaling) for c in self.components])
 
     def prior_transform(self, x):
-        return [y for c, i in zip(self.components, self.shape_positions) for y in c.prior_transform(x[i - c.nshapes:i])]
+        return [y for c, i in zip(self.components, self.shape_positions) for y in c.prior_transform(x[i - c.nshapes : i])]
 
 
 class FluxFixedPowerLaw(FluxBase):

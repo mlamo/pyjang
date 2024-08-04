@@ -76,6 +76,7 @@ class EffectiveAreaBase:
     def compute_acceptance(self, fluxcomponent, ipix: int, nside: int):
         def func(x: float):
             return fluxcomponent.evaluate(np.exp(x)) * self.evaluate(np.exp(x), ipix, nside) * np.exp(x)
+
         return quad(func, np.log(fluxcomponent.emin), np.log(fluxcomponent.emax), limit=500)[0]
 
     def compute_acceptance_map(self, fluxcomponent, nside: int):
@@ -293,7 +294,7 @@ class NuEvent:
     @property
     def log10energy(self):
         return np.log10(self.energy)
-    
+
     @property
     def coords(self):
         return astropy.coordinates.SkyCoord(ra=self.ra * rad, dec=self.dec * rad)

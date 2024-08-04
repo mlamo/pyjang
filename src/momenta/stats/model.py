@@ -107,9 +107,9 @@ class ModelNested:
     def prior(self, cube):
         x = cube.copy()
         i = 0
-        x[i:i + self.flux.ncomponents] = self.prior_norm(x[i:i + self.flux.ncomponents])
+        x[i : i + self.flux.ncomponents] = self.prior_norm(x[i : i + self.flux.ncomponents])
         i += self.flux.ncomponents
-        x[i:i + self.flux.nshapes] = self.flux.prior_transform(x[i:i + self.flux.nshapes])
+        x[i : i + self.flux.nshapes] = self.flux.prior_transform(x[i : i + self.flux.nshapes])
         i += self.flux.nshapes
         x[i] = np.floor(self.ntoys_src * x[i])
         i += 1
@@ -118,26 +118,26 @@ class ModelNested:
                 x[i + j] = self.bkg[j].prior_transform(x[i + j])
             i += self.nsamples
         if self.acc_variations:
-            rvs = norm.ppf(x[i:i + self.nsamples])
-            x[i:i + self.nsamples] = np.ones(self.nsamples) + np.dot(self.chol_cov_acc, rvs)
+            rvs = norm.ppf(x[i : i + self.nsamples])
+            x[i : i + self.nsamples] = np.ones(self.nsamples) + np.dot(self.chol_cov_acc, rvs)
         return x
 
     def loglike(self, cube):
         # Format input parameters
         i = 0
-        norms = cube[i:i + self.flux.ncomponents]
+        norms = cube[i : i + self.flux.ncomponents]
         i += self.flux.ncomponents
-        shapes = cube[i:i + self.flux.nshapes]
+        shapes = cube[i : i + self.flux.nshapes]
         i += self.flux.nshapes
         itoy = int(np.floor(cube[i]))
         i += 1
         if self.bkg_variations:
-            nbkg = cube[i:i + self.nsamples]
+            nbkg = cube[i : i + self.nsamples]
             i += self.nsamples
         else:
             nbkg = [b.nominal for b in self.bkg]
         if self.acc_variations:
-            facc = cube[i:i + self.nsamples]
+            facc = cube[i : i + self.nsamples]
         else:
             facc = 1
         # Get acceptance
@@ -163,7 +163,7 @@ class ModelNested:
         if self.fluxnorm_prior == "jeffreys":
             m_acc = facc * acc / 6  # shape = (ncomps, nsamples)
             m_nexp = nbkg + np.sum(nsigs, axis=0)  # shape = (nsamples)
-            m_fisher = np.matmul(m_acc/m_nexp, (m_acc/m_nexp).T)  # shape = (ncomps, ncomps)
+            m_fisher = np.matmul(m_acc / m_nexp, (m_acc / m_nexp).T)  # shape = (ncomps, ncomps)
             det_fisher = np.linalg.det(m_fisher)
             loglkl -= 0.5 * np.log(det_fisher)
         return loglkl
