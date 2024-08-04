@@ -75,7 +75,7 @@ class VonMisesSignal(AngularSignal):
             kappa = 1.0 / evt.sigma**2
             return kappa * np.exp(kappa * np.cos(dpsi)) / (4 * np.pi * np.sinh(kappa))
         else:
-            return 0.5 / np.pi / evt.sigma**2 * np.exp(-0.5 * (dpsi / evt.sigma) ** 2)
+            return 1 / (2 * np.pi * evt.sigma**2) * np.exp(-(dpsi / evt.sigma)**2 / 2)
 
 
 class EnergyBackground(PDF):

@@ -49,12 +49,12 @@ def redirect_stdout(dest_filename):
         dest_file.close()
 
 
-def run_ultranest(detector: NuDetectorBase, src: Transient, parameters: Parameters, precision_dlogz: float = 0.3):
+def run_ultranest(detector: NuDetectorBase, src: Transient, parameters: Parameters, precision_dlogz: float = 0.3, precision_dKL: float = 0.1):
 
     model = ModelNested(detector, src, parameters)
 
     sampler = ultranest.ReactiveNestedSampler(model.param_names, model.loglike, model.prior)
-    result = sampler.run(show_status=False, viz_callback=False, dlogz=precision_dlogz)
+    result = sampler.run(show_status=False, viz_callback=False, dlogz=precision_dlogz, dKL=precision_dKL)
 
     result["samples"] = {k: v for k, v in zip(model.param_names, result["samples"].transpose()) if k.startswith("flux") or k == "itoy"}
     result["weighted_samples"]["points"] = {

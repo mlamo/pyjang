@@ -25,14 +25,14 @@ import healpy as hp
 import numpy as np
 import scipy.integrate
 import yaml
-from scipy.integrate import quad
+from scipy.integrate import quad, trapezoid
 from scipy.interpolate import interp1d, RegularGridInterpolator
 from scipy.linalg import block_diag
 from scipy.stats import gamma, truncnorm
 
 import astropy.coordinates
 import astropy.time
-from astropy.units import deg
+from astropy.units import deg, rad
 
 import momenta.stats.pdfs as pdf
 
@@ -76,7 +76,6 @@ class EffectiveAreaBase:
     def compute_acceptance(self, fluxcomponent, ipix: int, nside: int):
         def func(x: float):
             return fluxcomponent.evaluate(np.exp(x)) * self.evaluate(np.exp(x), ipix, nside) * np.exp(x)
-
         return quad(func, np.log(fluxcomponent.emin), np.log(fluxcomponent.emax), limit=500)[0]
 
     def compute_acceptance_map(self, fluxcomponent, nside: int):
@@ -244,7 +243,7 @@ class BackgroundPoisson(Background):
         return self.Noff / self.alpha_offon
 
     def __repr__(self):
-        return f"{self.nominal:.2e} = {self.Noff:d}/{self.alpha_offon:d}"
+        return f"{self.nominal:.2e} = {self.Noff:d}/{self.alpha_offon:.2e}"
 
     def prior_transform(self, x):
         return gamma.ppf(x, self.Noff + 1, scale=1 / self.alpha_offon)
@@ -294,6 +293,10 @@ class NuEvent:
     @property
     def log10energy(self):
         return np.log10(self.energy)
+    
+    @property
+    def coords(self):
+        return astropy.coordinates.SkyCoord(ra=self.ra * rad, dec=self.dec * rad)
 
 
 class NuSample:
@@ -342,7 +345,7 @@ class NuSample:
         self.pdfs["background"]["ene"] = bkg_ene
         self.pdfs["background"]["time"] = bkg_time
 
-    def compute_event_probability(self, nsigs, nbkg, ev, ra_src, dec_src, flux):
+    def compute_event_probability(self, nsigs, nbkg, ev, ra_src, dec_src, flux, nobkg=False):
         psig, pbkg = np.ones_like(nsigs), 1
         if self.pdfs["signal"]["ang"] is not None and self.pdfs["background"]["ang"]:
             psig *= self.pdfs["signal"]["ang"](ev, ra_src, dec_src)
@@ -350,6 +353,8 @@ class NuSample:
         if self.pdfs["signal"]["ene"] is not None and self.pdfs["background"]["ene"]:
             psig *= self.pdfs["signal"]["ene"](ev, flux)
             pbkg *= self.pdfs["background"]["ene"](ev)
+        if nobkg:
+            return (psig.dot(nsigs) + (nbkg - np.sum(nsigs)) * pbkg) / nbkg
         return (psig.dot(nsigs) + nbkg * pbkg) / (np.sum(nsigs) + nbkg)
 
 

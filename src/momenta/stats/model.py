@@ -101,8 +101,8 @@ class ModelNested:
             return self.fluxnorm_range[0] + (self.fluxnorm_range[1] - self.fluxnorm_range[0]) * cube
         elif self.fluxnorm_prior == "flat-log":
             return np.power(10, np.log10(self.fluxnorm_range[0]) + (np.log10(self.fluxnorm_range[1]) - np.log10(self.fluxnorm_range[0])) * cube)
-        elif self.fluxnorm_prior == "jeffreys-pois":
-            return self.fluxnorm_range[1] * np.power(cube / 2, 2)
+        elif self.fluxnorm_prior == "jeffreys":
+            return self.fluxnorm_range[0] + (self.fluxnorm_range[1] - self.fluxnorm_range[0]) * cube
 
     def prior(self, cube):
         x = cube.copy()
@@ -159,6 +159,13 @@ class ModelNested:
                     continue
                 for ev in s.events:
                     loglkl += np.log(s.compute_event_probability(nsigs[:, i], nbkg[i], ev, toy["ra"], toy["dec"], self.flux))
+        # Add Jeffreys' prior
+        if self.fluxnorm_prior == "jeffreys":
+            m_acc = facc * acc / 6  # shape = (ncomps, nsamples)
+            m_nexp = nbkg + np.sum(nsigs, axis=0)  # shape = (nsamples)
+            m_fisher = np.matmul(m_acc/m_nexp, (m_acc/m_nexp).T)  # shape = (ncomps, ncomps)
+            det_fisher = np.linalg.det(m_fisher)
+            loglkl -= 0.5 * np.log(det_fisher)
         return loglkl
 
 
