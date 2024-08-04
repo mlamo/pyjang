@@ -7,11 +7,16 @@
 [![codecov](https://codecov.io/gh/mlamo/momenta/branch/main/graph/badge.svg?token=PVBSZ9P7TR)](https://codecov.io/gh/mlamo/momenta)
 [![License: GPL-3.0](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://opensource.org/licenses/GPL-3.0)
 
+This package aims to compute constraints on the neutrino emission from transient objects (either point sources or with some larger uncertainty on the localisation). The user should provide all the inputs in terms of neutrino observations and instrument response functions, as well as the flux spectrum and optionally the jet model to be considered. The code returns the posterior distribution from which upper limits, credible intervals and other information may be obtained. 
+
+The main feature is that multiple samples from multiple detectors can be easily combined, allowing for constraints spanning large energy ranges and/or with complementary sky coverage.
+
+More information on the methods is provided in the PDF documentation in ``doc/`` (still preliminary).
 
 ## Installation
 
 * Clone the repository: ``git clone https://github.com/mlamo/momenta.git``
-* Install the package: ``cd momenta && pip install -e .``
+* Install the package and all dependencies: ``cd momenta && pip install -e .``
 
 ## Step-by-step usage
 
