@@ -71,11 +71,11 @@ class GW(Transient):
             toys["distance_scaling"] = momenta.utils.conversions.distance_scaling(
                 toys.pop("luminosity_distance").to_numpy(), toys.pop("redshift").to_numpy()
             )
-            return toys
+            return toys.to_records(index=False)
         if self.fits:
-            return pd.DataFrame(data=self.fits.prepare_toys(nside))
+            return pd.DataFrame(data=self.fits.prepare_toys(nside)).to_records(index=False)
         self.log.warning("[GW] No toys are generated as this GW event has no FITS file nor posterior samples.")
-        return pd.DataFrame()
+        return pd.DataFrame().to_records(index=False)
 
 
 class _GWFits:

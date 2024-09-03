@@ -48,8 +48,8 @@ class EnergySignal(PDF):
     def __init__(self, func: Callable = None):
         self.func = func
 
-    def __call__(self, evt, flux):
-        return self.func(evt.ra, evt.dec, evt.energy, flux)
+    def __call__(self, evt, fluxcomponent):
+        return self.func(evt.ra, evt.dec, evt.energy, fluxcomponent)
 
 
 class AngularSignal(PDF):

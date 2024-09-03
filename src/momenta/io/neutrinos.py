@@ -68,31 +68,56 @@ class EffectiveAreaBase:
     This default class handles only energy-dependent effective area."""
 
     def __init__(self):
-        self.acceptances = {}
+        self._acceptances = {}
 
     def evaluate(self, energy: float | np.ndarray, ipix: int, nside: int):
+        """Evaluate the effective area for a given energy, pixel index, and skymap resolution."""
         return 0
 
-    def compute_acceptance(self, fluxcomponent, ipix: int, nside: int):
+    def _compute_acceptance(self, fluxcomponent, ipix: int, nside: int):
+        """Compute the acceptance integrating the effective area x flux in log scale between emin and emax.
+        Only used internally by `compute_acceptance_map`, may be overriden in a inheriting class."""
         def func(x: float):
             return fluxcomponent.evaluate(np.exp(x)) * self.evaluate(np.exp(x), ipix, nside) * np.exp(x)
 
         return quad(func, np.log(fluxcomponent.emin), np.log(fluxcomponent.emax), limit=500)[0]
 
     def compute_acceptance_map(self, fluxcomponent, nside: int):
-        return np.array([self.compute_acceptance(fluxcomponent, ipix, nside) for ipix in range(hp.nside2npix(nside))])
+        """Compute the acceptance map for a given flux component, iterating over all pixels."""
+        return np.array([self._compute_acceptance(fluxcomponent, ipix, nside) for ipix in range(hp.nside2npix(nside))])
+
+    def compute_acceptance_maps(self, fluxcomponents, nside: int):
+        """Compute the acceptance maps for a list of flux components, iterating over all components and pixels.
+        May be overriden by a smarter implementation for specific cases where computation can be optimized."""
+        return [self.compute_acceptance_map(c, nside) for c in fluxcomponents]
 
     def get_acceptance_map(self, fluxcomponent, nside: int):
-        if fluxcomponent.store_acceptance:
-            if str(fluxcomponent) not in self.acceptances:
-                self.acceptances[str(fluxcomponent)] = self.compute_acceptance_map(fluxcomponent, nside)
-            return hp.ud_grade(self.acceptances[str(fluxcomponent)], nside)
+        """Get the acceptance for a given flux component. 
+        If the component `store` attribute is 'exact', it is retrieved from the `acceptances` dictionary (added there if not yet available).
+        If the component `store` attribute is 'interpolate', the dictionary with the interpolation function (+inputs) is returned.
+        """
+        if fluxcomponent.store == "exact":
+            if (str(fluxcomponent), nside) not in self._acceptances:
+                self._acceptances[(str(fluxcomponent), nside)] = self.compute_acceptance_map(fluxcomponent, nside)
+            return self._acceptances[(str(fluxcomponent), nside)]
+        if fluxcomponent.store == "interpolate":
+            if (str(fluxcomponent), nside) not in self._acceptances:
+                accs = {str(c): a for c, a in zip(fluxcomponent.grid.flatten(), self.compute_acceptance_maps(fluxcomponent.grid.flatten(), nside))}
+                def f(_c):
+                    return accs[str(_c)]
+                accs = np.vectorize(f, signature="()->(n)")(fluxcomponent.grid)
+                grid = [*fluxcomponent.shapevar_grid, np.arange(hp.nside2npix(nside))]
+                self._acceptances[(str(fluxcomponent), nside)] = RegularGridInterpolator(grid, accs)
+            return self._acceptances[(str(fluxcomponent), nside)]
         return self.compute_acceptance_map(fluxcomponent, nside)
 
     def get_acceptance(self, fluxcomponent, ipix: int, nside: int):
-        if fluxcomponent.store_acceptance:
+        """Get the acceptance"""
+        if fluxcomponent.store == "exact":
             return self.get_acceptance_map(fluxcomponent, nside)[ipix]
-        return self.compute_acceptance(fluxcomponent, ipix, nside)
+        if fluxcomponent.store == "interpolate":
+            return self.get_acceptance_map(fluxcomponent, nside)([*fluxcomponent.shapevar_values, ipix])
+        return self._compute_acceptance(fluxcomponent, ipix, nside)
 
 
 class EffectiveAreaAllSky(EffectiveAreaBase):
@@ -109,7 +134,7 @@ class EffectiveAreaAllSky(EffectiveAreaBase):
         return self.func(energy)
 
     def compute_acceptance_map(self, fluxcomponent, nside):
-        acc = self.compute_acceptance(fluxcomponent, 0, nside) * np.ones(hp.nside2npix(nside))
+        acc = self._compute_acceptance(fluxcomponent, 0, nside) * np.ones(hp.nside2npix(nside))
         return acc
 
 
@@ -129,7 +154,7 @@ class EffectiveAreaDeclinationDep(EffectiveAreaBase):
             self.mapping[nside] = self.map_ipix_to_declination(nside)
         acc = np.zeros(hp.nside2npix(nside))
         for dec, ipix in zip(*np.unique(self.mapping[nside], return_index=True)):
-            acc[self.mapping[nside] == dec] = self.compute_acceptance(fluxcomponent, ipix, nside)
+            acc[self.mapping[nside] == dec] = self._compute_acceptance(fluxcomponent, ipix, nside)
         return acc
 
     def map_ipix_to_declination(self, nside):
@@ -166,7 +191,7 @@ class EffectiveAreaAltitudeDep(EffectiveAreaBase):
             self.mapping[nside] = self.map_ipix_to_altitude(nside)
         acc = np.zeros(hp.nside2npix(nside))
         for alt, ipix in zip(*np.unique(self.mapping[nside], return_index=True)):
-            acc[self.mapping[nside] == alt] = self.compute_acceptance(fluxcomponent, ipix, nside)
+            acc[self.mapping[nside] == alt] = self._compute_acceptance(fluxcomponent, ipix, nside)
         return acc
 
     def map_ipix_to_altitude(self, nside):
@@ -178,10 +203,6 @@ class EffectiveAreaAltitudeDep(EffectiveAreaBase):
 
 
 class Background(abc.ABC):
-    @abc.abstractmethod
-    def prepare_toys(self, ntoys: int):
-        pass
-
     @property
     @abc.abstractmethod
     def nominal(self):
@@ -200,9 +221,6 @@ class BackgroundFixed(Background):
     def __init__(self, b0: float):
         self.b0 = b0
 
-    def prepare_toys(self, ntoys: int):
-        return self.b0 * np.ones(ntoys)
-
     @property
     def nominal(self):
         return self.b0
@@ -217,9 +235,7 @@ class BackgroundFixed(Background):
 class BackgroundGaussian(Background):
     def __init__(self, b0: float, error_b: float):
         self.b0, self.error_b = b0, error_b
-
-    def prepare_toys(self, ntoys: int):
-        return truncnorm.rvs(-self.b0 / self.error_b, np.inf, loc=self.b0, scale=self.error_b, size=ntoys)
+        self.func = truncnorm(-self.b0 / self.error_b, np.inf, loc=self.b0, scale=self.error_b)
 
     @property
     def nominal(self):
@@ -229,25 +245,23 @@ class BackgroundGaussian(Background):
         return f"{self.b0:.2e} +/- {self.error_b:.2e}"
 
     def prior_transform(self, x):
-        return truncnorm.ppf(x, -self.b0 / self.error_b, np.inf, loc=self.b0, scale=self.error_b)
+        return self.func.ppf(x)
 
 
 class BackgroundPoisson(Background):
     def __init__(self, Noff: int, alpha_offon: int):
         self.Noff, self.alpha_offon = Noff, alpha_offon
-
-    def prepare_toys(self, ntoys: int):
-        return gamma.rvs(self.Noff + 1, scale=1 / self.alpha_offon, size=ntoys)
+        self.func = gamma(self.Noff + 1, scale=1 / self.alpha_offon)
 
     @property
     def nominal(self):
         return self.Noff / self.alpha_offon
 
     def __repr__(self):
-        return f"{self.nominal:.2e} = {self.Noff:d}/{self.alpha_offon:.2e}"
+        return f"{self.nominal:.2e} = {self.Noff:.0f}/{self.alpha_offon:.2e}"
 
     def prior_transform(self, x):
-        return gamma.ppf(x, self.Noff + 1, scale=1 / self.alpha_offon)
+        return self.func.ppf(x)
 
 
 class NuEvent:
@@ -308,8 +322,8 @@ class NuSample:
         self.effective_area = None
         self.nobserved = np.nan
         self.background = None
-        self.events = None
-        self.pdfs = {
+        self._events = None
+        self._pdfs = {
             "signal": {"ang": None, "ene": None, "time": None},
             "background": {"ang": None, "ene": None, "time": None},
         }
@@ -322,7 +336,12 @@ class NuSample:
         self.background = bkg
 
     def set_events(self, events: list[NuEvent]):
-        self.events = events
+        assert len(events) == self.nobserved or events is None
+        self._events = events
+        
+    @property
+    def events(self):
+        return self._events
 
     def set_pdfs(
         self,
@@ -339,24 +358,28 @@ class NuSample:
             raise RuntimeError("One of the energy PDFs is missing!")
         if (sig_time is None) ^ (bkg_time is None):
             raise RuntimeError("One of the time PDFs is missing!")
-        self.pdfs["signal"]["ang"] = sig_ang
-        self.pdfs["signal"]["ene"] = sig_ene
-        self.pdfs["signal"]["time"] = sig_time
-        self.pdfs["background"]["ang"] = bkg_ang
-        self.pdfs["background"]["ene"] = bkg_ene
-        self.pdfs["background"]["time"] = bkg_time
+        self._pdfs["signal"]["ang"] = sig_ang
+        self._pdfs["signal"]["ene"] = sig_ene
+        self._pdfs["signal"]["time"] = sig_time
+        self._pdfs["background"]["ang"] = bkg_ang
+        self._pdfs["background"]["ene"] = bkg_ene
+        self._pdfs["background"]["time"] = bkg_time
 
-    def compute_event_probability(self, nsigs, nbkg, ev, ra_src, dec_src, flux, nobkg=False):
-        psig, pbkg = np.ones_like(nsigs), 1
-        if self.pdfs["signal"]["ang"] is not None and self.pdfs["background"]["ang"]:
-            psig *= self.pdfs["signal"]["ang"](ev, ra_src, dec_src)
-            pbkg *= self.pdfs["background"]["ang"](ev)
-        if self.pdfs["signal"]["ene"] is not None and self.pdfs["background"]["ene"]:
-            psig *= self.pdfs["signal"]["ene"](ev, flux)
-            pbkg *= self.pdfs["background"]["ene"](ev)
-        if nobkg:
-            return (psig.dot(nsigs) + (nbkg - np.sum(nsigs)) * pbkg) / nbkg
-        return (psig.dot(nsigs) + nbkg * pbkg) / (np.sum(nsigs) + nbkg)
+    def compute_background_probability(self, ev):
+        pbkg = 1
+        if self._pdfs["background"]["ang"] is not None:
+            pbkg *= self._pdfs["background"]["ang"](ev)
+        if self._pdfs["background"]["ene"] is not None:
+            pbkg *= self._pdfs["background"]["ene"](ev)
+        return pbkg
+    
+    def compute_signal_probability(self, ev, fluxcomponent, ra_src, dec_src):
+        psig = 1
+        if self._pdfs["signal"]["ang"] is not None:
+            psig *= self._pdfs["signal"]["ang"](ev, ra_src, dec_src)
+        if self._pdfs["signal"]["ene"] is not None:
+            psig *= self._pdfs["signal"]["ene"](ev, fluxcomponent)
+        return psig
 
 
 class NuDetectorBase(abc.ABC):

@@ -114,7 +114,7 @@ def test_onesample(src, parameters):
     nside = 8
     best_ipix = np.argmax(gw.fits.get_skymap(nside))
     parameters.flux.set_shapes([2])
-    acc = EffAreaTest1().compute_acceptance(parameters.flux.components[0], best_ipix, nside)
+    acc = EffAreaTest1()._compute_acceptance(parameters.flux.components[0], best_ipix, nside)
     print(f"Naive UL = {2.3 / (acc/6):.2e}")
 
     for k in results.keys():
