@@ -32,9 +32,9 @@ def calculate_deterministics(samples, model):
     # Stop here if distance is not provided
     if "distance_scaling" not in model.toys_src.dtype.names:
         return det
-    itoys = samples["itoy"]
+    itoys = samples["itoy"].astype(int)
     nsamples = len(itoys)
-    distance_scaling = model.toys_src[itoys]["distance_scaling"].to_numpy()
+    distance_scaling = model.toys_src[itoys]["distance_scaling"]
     norms = np.array([samples[f"flux{i}_norm"] for i in range(model.flux.ncomponents)])
     if model.flux.nshapevars > 0:
         shapes = np.array([samples[f"flux{i}_{s}"] for i, c in enumerate(model.flux.components) for s in c.shape_names])
@@ -45,15 +45,15 @@ def calculate_deterministics(samples, model):
     else:
         det["eiso"] = np.sum(norms + model.flux.flux_to_eiso(distance_scaling), axis=0)
     if "radiated_energy" in model.toys_src.dtype.names:
-        radiated_energy = model.toys_src[itoys]["radiated_energy"].to_numpy()
+        radiated_energy = model.toys_src[itoys]["radiated_energy"]
         det["fnuiso"] = det["eiso"] / (radiated_energy * solarmass_to_erg)
     # Stop here if jet model is not provided or if `theta_jn`` is missing
     if model.parameters.jet is None or "theta_jn" not in model.toys_src.dtype.names:
         return det
-    theta_jn = model.toys_src[itoys]["theta_jn"].to_numpy()
+    theta_jn = model.toys_src[itoys]["theta_jn"]
     det["etot"] = det["eiso"] / model.parameters.jet.etot_to_eiso(theta_jn)
     if "radiated_energy" in model.toys_src.dtype.names:
-        radiated_energy = model.toys_src[itoys]["radiated_energy"].to_numpy()
+        radiated_energy = model.toys_src[itoys]["radiated_energy"]
         det["fnu"] = det["etot"] / (radiated_energy * solarmass_to_erg)
     return det
 
@@ -237,7 +237,7 @@ class ModelNested:
             loglkl = -np.sum(nexps, axis=1)  # dims = (npoints, )
             for isample, s in enumerate(self.detector.samples):
                 if s.events is None:
-                    loglkl += self.nobs[i] * np.log(nexps[i])  # dims = (npoints, )
+                    loglkl += self.nobs[isample] * np.log(nexps[:, isample])  # dims = (npoints, )
                     continue
                 psigs = np.zeros((npoints, self.flux.ncomponents, s.nobserved))  # dims = (npoints, ncompflux, nevents)
                 ishape = 0
