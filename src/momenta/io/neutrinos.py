@@ -21,7 +21,6 @@ import logging
 import os
 import warnings
 
-import healpy as hp
 import numpy as np
 import scipy.integrate
 import yaml

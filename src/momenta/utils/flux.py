@@ -147,6 +147,32 @@ class VariableBrokenPowerLaw(FixedBrokenPowerLaw):
         return self.shapevar_boundaries[:,0] + (self.shapevar_boundaries[:,1] - self.shapevar_boundaries[:,0]) * x
 
 
+class SemiVariableBrokenPowerLaw(FixedBrokenPowerLaw):
+
+    def __init__(self, emin, emax, gamma1, gamma_range=(1, 4, 16), log10ebreak_range=(3, 6, 4), eref=1):
+        super().__init__(emin=emin, emax=emax)
+        self.store = "interpolate"
+        self.eref = eref
+        self.shapefix_names = ["gamma1"]
+        self.shapefix_values = [gamma1]
+        self.shapevar_names = ["gamma2", "log(ebreak)"]
+        self.shapevar_boundaries = np.array([[*gamma_range], [*log10ebreak_range]])
+        self.init_shapevars()
+        self.grid = np.vectorize(partial(FixedBrokenPowerLaw, self.emin, self.emax, gamma1=gamma1, eref=self.eref))(*np.meshgrid(*self.shapevar_grid))
+
+    def evaluate(self, energy):
+        factor = (10**(self.shapevar_values[2]) / self.eref) ** (self.shapevar_values[1] - self.shapevar_values[0])
+        f = np.where(
+            np.log10(energy) < self.shapevar_values[2],
+            np.power(energy / self.eref, -self.shapevar_values[0]),
+            factor * np.power(energy / self.eref, -self.shapevar_values[1]),
+        )
+        return np.where((self.emin <= energy) & (energy <= self.emax), f, 0)
+    
+    def prior_transform(self, x):
+        return self.shapevar_boundaries[:,0] + (self.shapevar_boundaries[:,1] - self.shapevar_boundaries[:,0]) * x
+
+
 class FluxBase(abc.ABC):
 
     def __init__(self):

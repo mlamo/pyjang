@@ -30,6 +30,23 @@ import momenta.utils.conversions
 from momenta.io.transient import Transient
 
 
+default_samples_priorities = [
+    "PublicationSamples",
+    "Overall_posterior",
+    "C01:IMRPhenomXPHM",
+    "IMRPhenomXPHM",
+    "C01:IMRPhenomPv3HM",
+    "IMRPhenomPv3HM",
+    "C01:IMRPhenomPv2",
+    "IMRPhenomPv2",
+    "C01:IMRPhenomNSBH:HighSpin",
+    "IMRPhenomNSBH:HighSpin",
+    "C01:IMRPhenomNSBH:LowSpin",
+    "IMRPhenomNSBH:LowSpin",
+    "C01:Mixed",
+    "Mixed",
+]
+
 class GW(Transient):
     """Class to handle a full GW event, including FITS file (with skymap) and HDF5 file (with full posterior samples)."""
 
