@@ -46,6 +46,7 @@ class Parameters:
             else:
                 self.gw_posteriorsamples_priorities = [
                     "PublicationSamples",
+                    "Overall_posterior",
                     "C01:IMRPhenomXPHM",
                     "IMRPhenomXPHM",
                     "C01:IMRPhenomPv3HM",
