@@ -179,7 +179,7 @@ class _GWSamples:
         data = {}
         for var, varC in zip(variables, variables_corrected):
             data[var] = f[self.sample_name]["posterior_samples"][varC]
-            if var in ("ra", "deg"):
+            if var in ("ra", "dec"):
                 data[var] = np.rad2deg(data[var])  # convert from rad to deg
         f.close()
 
