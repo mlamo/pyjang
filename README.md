@@ -112,4 +112,4 @@ Some full examples are available in `examples/`:
 
 The code is currently being developed within the "Neutrino astronomy" group in the CP3 institute of the UCLouvain (Belgium). Contacts can be found in the repository metadata.
 
-<img src="https://github.com/mlamo/jang/blob/optimisation/doc/logo_UCLouvain.png" alt="UCLouvain logo" height="50"/><img src="https://github.com/mlamo/jang/blob/optimisation/doc/logo_AstroCP3.png" alt="Astro-CP3 logo" height="100"/>
+<img src="https://github.com/mlamo/jang/blob/optimisation/doc/logo_UCLouvain.png" alt="UCLouvain logo" height="60"/><img src="https://github.com/mlamo/jang/blob/optimisation/doc/logo_AstroCP3.png" alt="Astro-CP3 logo" height="80"/>
