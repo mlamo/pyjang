@@ -57,6 +57,7 @@ class EffectiveAreaBase:
     def _compute_acceptance(self, fluxcomponent: Component, ipix: int, nside: int):
         """Compute the acceptance integrating the effective area x flux in log scale between emin and emax.
         Only used internally by `compute_acceptance_map`, may be overriden in a inheriting class."""
+
         def func(x: float):
             return fluxcomponent.evaluate(np.exp(x)) * self.evaluate(np.exp(x), ipix, nside) * np.exp(x)
 
@@ -72,7 +73,7 @@ class EffectiveAreaBase:
         return [self.compute_acceptance_map(c, nside) for c in fluxcomponents]
 
     def get_acceptance_map(self, fluxcomponent: Component, nside: int):
-        """Get the acceptance for a given flux component. 
+        """Get the acceptance for a given flux component.
         If the component `store` attribute is 'exact', it is retrieved from the `acceptances` dictionary (added there if not yet available).
         If the component `store` attribute is 'interpolate', the dictionary with the interpolation function (+inputs) is returned.
         """
@@ -83,8 +84,10 @@ class EffectiveAreaBase:
         if fluxcomponent.store == "interpolate":
             if (str(fluxcomponent), nside) not in self._acceptances:
                 accs = {str(c): a for c, a in zip(fluxcomponent.grid.flatten(), self.compute_acceptance_maps(fluxcomponent.grid.flatten(), nside))}
+
                 def f(_c):
                     return accs[str(_c)]
+
                 accs = np.vectorize(f, signature="()->(n)")(fluxcomponent.grid)
                 grid = [*fluxcomponent.shapevar_grid, np.arange(hp.nside2npix(nside))]
                 self._acceptances[(str(fluxcomponent), nside)] = RegularGridInterpolator(grid, accs)
@@ -190,26 +193,26 @@ class PDFBase:
 
 
 class PDFFluxDependent(PDFBase):
-    
+
     def __init__(self):
         super().__init__()
         self._pdfs = {}
-    
+
     @abc.abstractmethod
     def __call__(self, evt, fluxcomponent: Component):
         pass
-    
+
     @abc.abstractmethod
     def compute_pdf(self, fluxcomponent: Component):
         pass
-    
+
     def compute_pdfs(self, fluxcomponents: list[Component]):
         """Compute the PDFs for a list of flux components, iterating over all components.
         May be overriden by a smarter implementation for specific cases where computation can be optimized."""
         return [self.compute_pdf(c) for c in fluxcomponents]
-    
+
     def get_pdf(self, fluxcomponent: Component):
-        """Get the PDF for a given flux component. 
+        """Get the PDF for a given flux component.
         If the component `store` attribute is 'exact', it is retrieved from the `pdfs` dictionary (added there if not yet available).
         If the component `store` attribute is 'interpolate', the dictionary with the PDFs for all points in the grid is returned.
         """
@@ -220,8 +223,10 @@ class PDFFluxDependent(PDFBase):
         if fluxcomponent.store == "interpolate":
             if str(fluxcomponent) not in self._pdfs:
                 pdfs = {str(c): p for c, p in zip(fluxcomponent.grid.flatten(), self.compute_pdfs(fluxcomponent.grid.flatten()))}
+
                 def f(_c):
                     return pdfs[str(_c)]
+
                 self._pdfs[str(fluxcomponent)] = np.vectorize(f)(fluxcomponent.grid)
             return self._pdfs[str(fluxcomponent)]
         return self.compute_pdf(fluxcomponent)
@@ -240,16 +245,20 @@ class PDFFluxDependent(PDFBase):
         if fluxcomponent.store == "interpolate" and len(kwargs) == 0:
             pdfs = self.get_pdf(fluxcomponent)
             if (str(fluxcomponent), str(evt)) not in self._pdfs:
+
                 def f(func):
                     return func(evt)
+
                 self._pdfs[(str(fluxcomponent), str(evt))] = RegularGridInterpolator(fluxcomponent.shapevar_grid, np.vectorize(f)(pdfs))
             return self._pdfs[(str(fluxcomponent), str(evt))](fluxcomponent.shapevar_values)
         if fluxcomponent.store == "interpolate" and len(kwargs) > 0:
             pdfs = self.get_pdf(fluxcomponent)
+
             def f(func):
                 return func(evt, **kwargs)
+
             return RegularGridInterpolator(fluxcomponent.shapevar_grid, np.vectorize(f)(pdfs))(fluxcomponent.shapevar_values)
-    
+
 
 class EnergySignal(PDFFluxDependent):
     """The standard energy signal PDF is a function f(ra,dec,E,flux)."""
@@ -257,7 +266,7 @@ class EnergySignal(PDFFluxDependent):
     def __init__(self, func: Callable = None):
         super().__init__()
         self.func = func
-        
+
 
 class AngularSignal(PDFBase):
     """The standard angular signal PDF is a function f(ra,dec,ra[src],dec[src],E)."""

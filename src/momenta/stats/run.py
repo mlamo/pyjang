@@ -49,7 +49,14 @@ def redirect_stdout(dest_filename):
         dest_file.close()
 
 
-def run_ultranest(detector: NuDetectorBase, src: Transient, parameters: Parameters, precision_dlogz: float = 0.3, precision_dKL: float = 0.1, vectorized: bool = True):
+def run_ultranest(
+    detector: NuDetectorBase,
+    src: Transient,
+    parameters: Parameters,
+    precision_dlogz: float = 0.3,
+    precision_dKL: float = 0.1,
+    vectorized: bool = True,
+):
 
     model = ModelNested(detector, src, parameters)
 
@@ -64,4 +71,3 @@ def run_ultranest(detector: NuDetectorBase, src: Transient, parameters: Paramete
         k: v for k, v in zip(model.param_names, result["weighted_samples"]["points"].transpose()) if k.startswith("flux") or k == "itoy"
     }
     return model, result
-

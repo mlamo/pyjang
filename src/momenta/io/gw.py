@@ -47,6 +47,7 @@ default_samples_priorities = [
     "Mixed",
 ]
 
+
 class GW(Transient):
     """Class to handle a full GW event, including FITS file (with skymap) and HDF5 file (with full posterior samples)."""
 

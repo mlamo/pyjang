@@ -196,7 +196,7 @@ class NuSample:
     def set_events(self, events: list[NuEvent]):
         assert len(events) == self.nobserved or events is None
         self._events = events
-        
+
     @property
     def events(self):
         return self._events
@@ -230,7 +230,7 @@ class NuSample:
         if self._pdfs["background"]["ene"] is not None:
             pbkg *= self._pdfs["background"]["ene"](ev)
         return pbkg
-    
+
     def compute_signal_probability(self, ev, fluxcomponent, ra_src, dec_src):
         psig = 1
         if self._pdfs["signal"]["ang"] is not None:

@@ -121,7 +121,7 @@ class ModelNested:
             rvs = norm.ppf(x[i : i + self.nsamples])
             x[i : i + self.nsamples] = np.ones(self.nsamples) + np.dot(self.chol_cov_acc, rvs)
         return x
-    
+
     def prior_vec(self, cube):
         x = cube.copy()
         i = 0
@@ -157,16 +157,13 @@ class ModelNested:
         if self.acc_variations:
             facc = cube[i : i + self.nsamples]
         else:
-            facc = 1            
+            facc = 1
         # Get acceptance
         if self.flux.nshapevars > 0:
             self.flux.set_shapevars(shapes)
         toy = self.toys_src[itoy]
         acc = np.array(
-            [
-                [s.effective_area.get_acceptance(c, toy.ipix, self.parameters.nside) for s in self.detector.samples]
-                for c in self.flux.components
-            ]
+            [[s.effective_area.get_acceptance(c, toy.ipix, self.parameters.nside) for s in self.detector.samples] for c in self.flux.components]
         )
         # Compute log-likelihood
         nsigs = facc * np.array(norms)[:, np.newaxis] * acc / 6  # (ncompflux, nsamples)
@@ -192,7 +189,7 @@ class ModelNested:
             det_fisher = np.linalg.det(m_fisher)
             loglkl -= 0.5 * np.log(det_fisher)
         return loglkl
-    
+
     def loglike_vec(self, cube):
         npoints = cube.shape[0]
         # INPUTS
@@ -224,7 +221,7 @@ class ModelNested:
             ishape = 0
             for iflux, c in enumerate(self.flux.components):
                 if c.nshapevars > 0:
-                    c.set_shapevars(shapes[ipoint, ishape : ishape+c.nshapevars])
+                    c.set_shapevars(shapes[ipoint, ishape : ishape + c.nshapevars])
                     ishape += c.nshapevars
                 for isample, s in enumerate(self.detector.samples):
                     accs[ipoint, iflux, isample] = s.effective_area.get_acceptance(c, toys[ipoint].ipix, self.parameters.nside)
@@ -244,7 +241,7 @@ class ModelNested:
                 for iflux, c in enumerate(self.flux.components):
                     for ipoint in range(npoints):
                         if c.nshapevars > 0:
-                            c.set_shapevars(shapes[ipoint, ishape : ishape+c.nshapevars])
+                            c.set_shapevars(shapes[ipoint, ishape : ishape + c.nshapevars])
                         for ievt, evt in enumerate(s.events):
                             psigs[ipoint, iflux, ievt] = s.compute_signal_probability(evt, c, toys[ipoint].ra, toys[ipoint].dec)
                     ishape += c.nshapevars
