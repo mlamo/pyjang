@@ -106,3 +106,11 @@ print("HPD interval", get_hpd_interval(result["samples"]["flux0_norm"], CL=0.90)
 Some full examples are available in `examples/`:
 * `superkamiokande.py` provides a full example using Super-Kamiokande public effective areas from [Zenodo](https://zenodo.org/records/4724823) and expected background rates from [Astrophys.J. 918 (2021) 2, 78](https://doi.org/10.3847/1538-4357/ac0d5a).
 * `full_example.ipynb` provides a step-by-step example to get sensitivities and perform a combination of different detectors.
+
+
+## Credits
+
+The code is currently being developed within the "Neutrino astronomy" group in the CP3 institute of the UCLouvain (Belgium). Contacts can be found in the repository metadata.
+
+![UCLouvain logo](https://github.com/mlamo/jang/blob/main/doc/logo_UCLouvain.png)
+![Astro-CP3 logo](https://github.com/mlamo/jang/blob/main/doc/logo_AstroCP3.png)
